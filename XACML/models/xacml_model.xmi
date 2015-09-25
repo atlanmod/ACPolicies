@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="ASCII"?>
+<policy:DocumentRoot
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:policy="urn:oasis:names:tc:xacml:1.0:policy"
+    xsi:schemaLocation="urn:oasis:names:tc:xacml:1.0:policy ../metamodels/policy.ecore">
+  <rule ruleId="LoginRule">
+    <target>
+      <subjects/>
+      <resources/>
+      <actions>
+        <anyAction
+            xsi:type="policy:ActionMatchType"
+            matchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+          <attributeValue
+              dataType="http://www.w3.org/2001/XMLSchema#string">
+login          </attributeValue>
+          <actionAttributeDesignator
+              attributeId="ServerAction"
+              dataType="http://www.w3.org/2001/XMLSchema#string"/>
+        </anyAction>
+      </actions>
+    </target>
+  </rule>
+</policy:DocumentRoot>

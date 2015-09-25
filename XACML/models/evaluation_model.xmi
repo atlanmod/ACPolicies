@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<evaluation:Output xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:evaluation="http://armines.org/metamodels/Evaluation">
+  <evaluations effect="1"/>
+  <evaluations effect="0"/>
+  <evaluations effect="0"/>
+</evaluation:Output>

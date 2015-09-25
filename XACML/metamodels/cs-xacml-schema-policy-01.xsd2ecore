@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="ASCII"?>
+<xsd2ecore:XSD2EcoreMappingRoot xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsd2ecore="http://www.eclipse.org/emf/2002/XSD2Ecore" inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#/"
+    outputs="policy.ecore#/" topToBottom="true">
+  <nested inputs="bundleentry://908.fwk15184449/cache/www.w3.org/2001/XMLSchema.xsd#//anyURI;XSDSimpleTypeDefinition=25"
+      outputs="http://www.eclipse.org/emf/2003/XMLType#//AnyURI"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeValueType;XSDComplexTypeDefinition=17"
+      outputs="policy.ecore#//AttributeValueType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeValueType;XSDComplexTypeDefinition=17/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//AttributeValueType/any"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeValueType;XSDComplexTypeDefinition=17/XSDAttributeUse"
+        outputs="policy.ecore#//AttributeValueType/dataType"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeValueType;XSDComplexTypeDefinition=17/XSDWildcard"
+        outputs="policy.ecore#//AttributeValueType/anyAttribute"/>
+  </nested>
+  <nested inputs="bundleentry://908.fwk15184449/cache/www.w3.org/2001/XMLSchema.xsd#//string;XSDSimpleTypeDefinition=9"
+      outputs="http://www.eclipse.org/emf/2003/XMLType#//String"/>
+  <nested inputs="bundleentry://908.fwk15184449/cache/www.w3.org/2001/XMLSchema.xsd#//boolean;XSDSimpleTypeDefinition=10"
+      outputs="http://www.eclipse.org/emf/2003/XMLType#//Boolean"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeDesignatorType;XSDComplexTypeDefinition=15"
+      outputs="policy.ecore#//AttributeDesignatorType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeDesignatorType;XSDComplexTypeDefinition=15/XSDAttributeUse"
+        outputs="policy.ecore#//AttributeDesignatorType/attributeId"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeDesignatorType;XSDComplexTypeDefinition=15/XSDAttributeUse=1"
+        outputs="policy.ecore#//AttributeDesignatorType/dataType"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeDesignatorType;XSDComplexTypeDefinition=15/XSDAttributeUse=2"
+        outputs="policy.ecore#//AttributeDesignatorType/issuer"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeDesignatorType;XSDComplexTypeDefinition=15/XSDAttributeUse=3"
+        outputs="policy.ecore#//AttributeDesignatorType/mustBePresent"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeSelectorType;XSDComplexTypeDefinition=14"
+      outputs="policy.ecore#//AttributeSelectorType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeSelectorType;XSDComplexTypeDefinition=14/XSDAttributeUse=1"
+        outputs="policy.ecore#//AttributeSelectorType/dataType"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeSelectorType;XSDComplexTypeDefinition=14/XSDAttributeUse=2"
+        outputs="policy.ecore#//AttributeSelectorType/mustBePresent"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeSelectorType;XSDComplexTypeDefinition=14/XSDAttributeUse"
+        outputs="policy.ecore#//AttributeSelectorType/requestContextPath"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ActionMatchType;XSDComplexTypeDefinition=13"
+      outputs="policy.ecore#//ActionMatchType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ActionMatchType;XSDComplexTypeDefinition=13/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//ActionMatchType/attributeValue"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ActionMatchType;XSDComplexTypeDefinition=13/XSDParticle/XSDModelGroup/XSDParticle=1/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//ActionMatchType/actionAttributeDesignator"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ActionMatchType;XSDComplexTypeDefinition=13/XSDParticle/XSDModelGroup/XSDParticle=1/XSDModelGroup/XSDParticle=1"
+        outputs="policy.ecore#//ActionMatchType/attributeSelector"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ActionMatchType;XSDComplexTypeDefinition=13/XSDAttributeUse"
+        outputs="policy.ecore#//ActionMatchType/matchId"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ActionType;XSDComplexTypeDefinition=10"
+      outputs="policy.ecore#//ActionType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ActionType;XSDComplexTypeDefinition=10/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//ActionType/actionMatch"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Action;XSDElementDeclaration=18"
+      outputs="policy.ecore#//DocumentRoot/action"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ActionAttributeDesignator;XSDElementDeclaration=24"
+      outputs="policy.ecore#//DocumentRoot/actionAttributeDesignator"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ActionMatch;XSDElementDeclaration=21"
+      outputs="policy.ecore#//DocumentRoot/actionMatch"/>
+  <nested inputs="bundleentry://908.fwk15184449/cache/www.w3.org/2001/XMLSchema.xsd#//anyType;XSDComplexTypeDefinition=28"
+      outputs="http://www.eclipse.org/emf/2002/Ecore#//EObject"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ActionsType;XSDComplexTypeDefinition=9"
+      outputs="policy.ecore#//ActionsType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ActionsType;XSDComplexTypeDefinition=9/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//ActionsType/action"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ActionsType;XSDComplexTypeDefinition=9/XSDParticle/XSDModelGroup/XSDParticle=1"
+        outputs="policy.ecore#//ActionsType/anyAction"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Actions;XSDElementDeclaration=16"
+      outputs="policy.ecore#//DocumentRoot/actions"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AnyAction;XSDElementDeclaration=17"
+      outputs="policy.ecore#//DocumentRoot/anyAction"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AnyResource;XSDElementDeclaration=14"
+      outputs="policy.ecore#//DocumentRoot/anyResource"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AnySubject;XSDElementDeclaration=12"
+      outputs="policy.ecore#//DocumentRoot/anySubject"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//FunctionType;XSDComplexTypeDefinition=18"
+      outputs="policy.ecore#//FunctionType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//FunctionType;XSDComplexTypeDefinition=18/XSDAttributeUse"
+        outputs="policy.ecore#//FunctionType/functionId"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectAttributeDesignatorType;XSDComplexTypeDefinition=16"
+      outputs="policy.ecore#//SubjectAttributeDesignatorType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectAttributeDesignatorType;XSDComplexTypeDefinition=16/XSDAttributeUse"
+        outputs="policy.ecore#//SubjectAttributeDesignatorType/subjectCategory"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ApplyType;XSDComplexTypeDefinition=19"
+      outputs="policy.ecore#//ApplyType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ApplyType;XSDComplexTypeDefinition=19/XSDParticle"
+        outputs="policy.ecore#//ApplyType/group"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ApplyType;XSDComplexTypeDefinition=19/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//ApplyType/apply"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ApplyType;XSDComplexTypeDefinition=19/XSDParticle/XSDModelGroup/XSDParticle=1"
+        outputs="policy.ecore#//ApplyType/function"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ApplyType;XSDComplexTypeDefinition=19/XSDParticle/XSDModelGroup/XSDParticle=2"
+        outputs="policy.ecore#//ApplyType/attributeValue"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ApplyType;XSDComplexTypeDefinition=19/XSDParticle/XSDModelGroup/XSDParticle=3"
+        outputs="policy.ecore#//ApplyType/subjectAttributeDesignator"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ApplyType;XSDComplexTypeDefinition=19/XSDParticle/XSDModelGroup/XSDParticle=4"
+        outputs="policy.ecore#//ApplyType/resourceAttributeDesignator"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ApplyType;XSDComplexTypeDefinition=19/XSDParticle/XSDModelGroup/XSDParticle=5"
+        outputs="policy.ecore#//ApplyType/actionAttributeDesignator"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ApplyType;XSDComplexTypeDefinition=19/XSDParticle/XSDModelGroup/XSDParticle=6"
+        outputs="policy.ecore#//ApplyType/environmentAttributeDesignator"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ApplyType;XSDComplexTypeDefinition=19/XSDParticle/XSDModelGroup/XSDParticle=7"
+        outputs="policy.ecore#//ApplyType/attributeSelector"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ApplyType;XSDComplexTypeDefinition=19/XSDAttributeUse"
+        outputs="policy.ecore#//ApplyType/functionId"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Apply;XSDElementDeclaration=29"
+      outputs="policy.ecore#//DocumentRoot/apply"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeAssignmentType;XSDComplexTypeDefinition=22"
+      outputs="policy.ecore#//AttributeAssignmentType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeAssignmentType;XSDComplexTypeDefinition=22/XSDAttributeUse"
+        outputs="policy.ecore#//AttributeAssignmentType/attributeId"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeAssignment;XSDElementDeclaration=33"
+      outputs="policy.ecore#//DocumentRoot/attributeAssignment"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeSelector;XSDElementDeclaration=22"
+      outputs="policy.ecore#//DocumentRoot/attributeSelector"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//AttributeValue;XSDElementDeclaration=27"
+      outputs="policy.ecore#//DocumentRoot/attributeValue"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Condition;XSDElementDeclaration=30"
+      outputs="policy.ecore#//DocumentRoot/condition"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Description;XSDElementDeclaration=7"
+      outputs="policy.ecore#//DocumentRoot/description"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//EnvironmentAttributeDesignator;XSDElementDeclaration=25"
+      outputs="policy.ecore#//DocumentRoot/environmentAttributeDesignator"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Function;XSDElementDeclaration=28"
+      outputs="policy.ecore#//DocumentRoot/function"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//EffectType;XSDSimpleTypeDefinition"
+      outputs="policy.ecore#//EffectType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//EffectType;XSDSimpleTypeDefinition/XSDEnumerationFacet"
+        outputs="policy.ecore#//EffectType/Permit"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//EffectType;XSDSimpleTypeDefinition/XSDEnumerationFacet=1"
+        outputs="policy.ecore#//EffectType/Deny"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ObligationType;XSDComplexTypeDefinition=21"
+      outputs="policy.ecore#//ObligationType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ObligationType;XSDComplexTypeDefinition=21/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//ObligationType/attributeAssignment"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ObligationType;XSDComplexTypeDefinition=21/XSDAttributeUse=1"
+        outputs="policy.ecore#//ObligationType/fulfillOn"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ObligationType;XSDComplexTypeDefinition=21/XSDAttributeUse"
+        outputs="policy.ecore#//ObligationType/obligationId"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Obligation;XSDElementDeclaration=32"
+      outputs="policy.ecore#//DocumentRoot/obligation"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ObligationsType;XSDComplexTypeDefinition=20"
+      outputs="policy.ecore#//ObligationsType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ObligationsType;XSDComplexTypeDefinition=20/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//ObligationsType/obligation"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Obligations;XSDElementDeclaration=31"
+      outputs="policy.ecore#//DocumentRoot/obligations"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//DefaultsType;XSDComplexTypeDefinition=1"
+      outputs="policy.ecore#//DefaultsType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//DefaultsType;XSDComplexTypeDefinition=1/XSDParticle/XSDModelGroup/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//DefaultsType/xPathVersion"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectMatchType;XSDComplexTypeDefinition=11"
+      outputs="policy.ecore#//SubjectMatchType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectMatchType;XSDComplexTypeDefinition=11/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//SubjectMatchType/attributeValue"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectMatchType;XSDComplexTypeDefinition=11/XSDParticle/XSDModelGroup/XSDParticle=1/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//SubjectMatchType/subjectAttributeDesignator"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectMatchType;XSDComplexTypeDefinition=11/XSDParticle/XSDModelGroup/XSDParticle=1/XSDModelGroup/XSDParticle=1"
+        outputs="policy.ecore#//SubjectMatchType/attributeSelector"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectMatchType;XSDComplexTypeDefinition=11/XSDAttributeUse"
+        outputs="policy.ecore#//SubjectMatchType/matchId"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectType;XSDComplexTypeDefinition=6"
+      outputs="policy.ecore#//SubjectType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectType;XSDComplexTypeDefinition=6/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//SubjectType/subjectMatch"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectsType;XSDComplexTypeDefinition=5"
+      outputs="policy.ecore#//SubjectsType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectsType;XSDComplexTypeDefinition=5/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//SubjectsType/subject"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectsType;XSDComplexTypeDefinition=5/XSDParticle/XSDModelGroup/XSDParticle=1"
+        outputs="policy.ecore#//SubjectsType/anySubject"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ResourceMatchType;XSDComplexTypeDefinition=12"
+      outputs="policy.ecore#//ResourceMatchType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ResourceMatchType;XSDComplexTypeDefinition=12/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//ResourceMatchType/attributeValue"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ResourceMatchType;XSDComplexTypeDefinition=12/XSDParticle/XSDModelGroup/XSDParticle=1/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//ResourceMatchType/resourceAttributeDesignator"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ResourceMatchType;XSDComplexTypeDefinition=12/XSDParticle/XSDModelGroup/XSDParticle=1/XSDModelGroup/XSDParticle=1"
+        outputs="policy.ecore#//ResourceMatchType/attributeSelector"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ResourceMatchType;XSDComplexTypeDefinition=12/XSDAttributeUse"
+        outputs="policy.ecore#//ResourceMatchType/matchId"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ResourceType;XSDComplexTypeDefinition=8"
+      outputs="policy.ecore#//ResourceType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ResourceType;XSDComplexTypeDefinition=8/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//ResourceType/resourceMatch"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ResourcesType;XSDComplexTypeDefinition=7"
+      outputs="policy.ecore#//ResourcesType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ResourcesType;XSDComplexTypeDefinition=7/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//ResourcesType/resource"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ResourcesType;XSDComplexTypeDefinition=7/XSDParticle/XSDModelGroup/XSDParticle=1"
+        outputs="policy.ecore#//ResourcesType/anyResource"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//TargetType;XSDComplexTypeDefinition=4"
+      outputs="policy.ecore#//TargetType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//TargetType;XSDComplexTypeDefinition=4/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//TargetType/subjects"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//TargetType;XSDComplexTypeDefinition=4/XSDParticle/XSDModelGroup/XSDParticle=1"
+        outputs="policy.ecore#//TargetType/resources"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//TargetType;XSDComplexTypeDefinition=4/XSDParticle/XSDModelGroup/XSDParticle=2"
+        outputs="policy.ecore#//TargetType/actions"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//RuleType;XSDComplexTypeDefinition=3"
+      outputs="policy.ecore#//RuleType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//RuleType;XSDComplexTypeDefinition=3/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//RuleType/description"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//RuleType;XSDComplexTypeDefinition=3/XSDParticle/XSDModelGroup/XSDParticle=1"
+        outputs="policy.ecore#//RuleType/target"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//RuleType;XSDComplexTypeDefinition=3/XSDParticle/XSDModelGroup/XSDParticle=2"
+        outputs="policy.ecore#//RuleType/condition"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//RuleType;XSDComplexTypeDefinition=3/XSDAttributeUse=1"
+        outputs="policy.ecore#//RuleType/effect"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//RuleType;XSDComplexTypeDefinition=3/XSDAttributeUse"
+        outputs="policy.ecore#//RuleType/ruleId"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicyType;XSDComplexTypeDefinition=2"
+      outputs="policy.ecore#//PolicyType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicyType;XSDComplexTypeDefinition=2/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//PolicyType/description"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicyType;XSDComplexTypeDefinition=2/XSDParticle/XSDModelGroup/XSDParticle=1"
+        outputs="policy.ecore#//PolicyType/policyDefaults"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicyType;XSDComplexTypeDefinition=2/XSDParticle/XSDModelGroup/XSDParticle=2"
+        outputs="policy.ecore#//PolicyType/target"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicyType;XSDComplexTypeDefinition=2/XSDParticle/XSDModelGroup/XSDParticle=3"
+        outputs="policy.ecore#//PolicyType/rule"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicyType;XSDComplexTypeDefinition=2/XSDParticle/XSDModelGroup/XSDParticle=4"
+        outputs="policy.ecore#//PolicyType/obligations"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicyType;XSDComplexTypeDefinition=2/XSDAttributeUse"
+        outputs="policy.ecore#//PolicyType/policyId"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicyType;XSDComplexTypeDefinition=2/XSDAttributeUse=1"
+        outputs="policy.ecore#//PolicyType/ruleCombiningAlgId"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Policy;XSDElementDeclaration=6"
+      outputs="policy.ecore#//DocumentRoot/policy"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicyDefaults;XSDElementDeclaration=4"
+      outputs="policy.ecore#//DocumentRoot/policyDefaults"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicyIdReference;XSDElementDeclaration=2"
+      outputs="policy.ecore#//DocumentRoot/policyIdReference"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetType;XSDComplexTypeDefinition"
+      outputs="policy.ecore#//PolicySetType">
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetType;XSDComplexTypeDefinition/XSDParticle/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//PolicySetType/description"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetType;XSDComplexTypeDefinition/XSDParticle/XSDModelGroup/XSDParticle=1"
+        outputs="policy.ecore#//PolicySetType/policySetDefaults"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetType;XSDComplexTypeDefinition/XSDParticle/XSDModelGroup/XSDParticle=2"
+        outputs="policy.ecore#//PolicySetType/target"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetType;XSDComplexTypeDefinition/XSDParticle/XSDModelGroup/XSDParticle=3"
+        outputs="policy.ecore#//PolicySetType/group"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetType;XSDComplexTypeDefinition/XSDParticle/XSDModelGroup/XSDParticle=3/XSDModelGroup/XSDParticle"
+        outputs="policy.ecore#//PolicySetType/policySet"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetType;XSDComplexTypeDefinition/XSDParticle/XSDModelGroup/XSDParticle=3/XSDModelGroup/XSDParticle=1"
+        outputs="policy.ecore#//PolicySetType/policy"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetType;XSDComplexTypeDefinition/XSDParticle/XSDModelGroup/XSDParticle=3/XSDModelGroup/XSDParticle=2"
+        outputs="policy.ecore#//PolicySetType/policySetIdReference"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetType;XSDComplexTypeDefinition/XSDParticle/XSDModelGroup/XSDParticle=3/XSDModelGroup/XSDParticle=3"
+        outputs="policy.ecore#//PolicySetType/policyIdReference"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetType;XSDComplexTypeDefinition/XSDParticle/XSDModelGroup/XSDParticle=4"
+        outputs="policy.ecore#//PolicySetType/obligations"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetType;XSDComplexTypeDefinition/XSDAttributeUse=1"
+        outputs="policy.ecore#//PolicySetType/policyCombiningAlgId"/>
+    <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetType;XSDComplexTypeDefinition/XSDAttributeUse"
+        outputs="policy.ecore#//PolicySetType/policySetId"/>
+  </nested>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySet;XSDElementDeclaration"
+      outputs="policy.ecore#//DocumentRoot/policySet"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetDefaults;XSDElementDeclaration=3"
+      outputs="policy.ecore#//DocumentRoot/policySetDefaults"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//PolicySetIdReference;XSDElementDeclaration=1"
+      outputs="policy.ecore#//DocumentRoot/policySetIdReference"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Resource;XSDElementDeclaration=15"
+      outputs="policy.ecore#//DocumentRoot/resource"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ResourceAttributeDesignator;XSDElementDeclaration=23"
+      outputs="policy.ecore#//DocumentRoot/resourceAttributeDesignator"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//ResourceMatch;XSDElementDeclaration=20"
+      outputs="policy.ecore#//DocumentRoot/resourceMatch"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Resources;XSDElementDeclaration=13"
+      outputs="policy.ecore#//DocumentRoot/resources"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Rule;XSDElementDeclaration=8"
+      outputs="policy.ecore#//DocumentRoot/rule"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Subject;XSDElementDeclaration=11"
+      outputs="policy.ecore#//DocumentRoot/subject"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectAttributeDesignator;XSDElementDeclaration=26"
+      outputs="policy.ecore#//DocumentRoot/subjectAttributeDesignator"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//SubjectMatch;XSDElementDeclaration=19"
+      outputs="policy.ecore#//DocumentRoot/subjectMatch"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Subjects;XSDElementDeclaration=10"
+      outputs="policy.ecore#//DocumentRoot/subjects"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//Target;XSDElementDeclaration=9"
+      outputs="policy.ecore#//DocumentRoot/target"/>
+  <nested inputs="http://docs.oasis-open.org/xacml/3.0/XSD/cs-xacml-schema-policy-01.xsd#//XPathVersion;XSDElementDeclaration=5"
+      outputs="policy.ecore#//DocumentRoot/xPathVersion"/>
+</xsd2ecore:XSD2EcoreMappingRoot>

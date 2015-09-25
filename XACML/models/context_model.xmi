@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="ASCII"?>
+<context:DocumentRoot
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="urn:oasis:names:tc:xacml:1.0:context"
+    xsi:schemaLocation="urn:oasis:names:tc:xacml:1.0:context ../metamodels/context.ecore">
+  <request>
+    <subject
+        subjectCategory="urn:oasis:names:tc:xacml:1.0:subject-category:access-subject">
+      <attribute
+          attributeId="AnySubject"/>
+    </subject>
+    <resource>
+      <attribute
+          attributeId="AnyResource"/>
+    </resource>
+    <action>
+      <attribute
+          attributeId="login"/>
+    </action>
+  </request>
+  <request>
+    <subject>
+      <attribute
+          attributeId="subject2"/>
+    </subject>
+    <resource>
+      <attribute
+          attributeId="resource2"/>
+    </resource>
+    <action>
+      <attribute
+          attributeId="action2"/>
+    </action>
+  </request>
+</context:DocumentRoot>

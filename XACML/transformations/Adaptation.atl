@@ -1,0 +1,4349 @@
+module Adaptation; -- Module Template
+create OUT : ATL refining IN : ATL, diff : DIFF, Exam : Ecore, Exam2 : Ecore2;
+
+helper def : filterDiffModel (param : String) : String =
+	if not param.oclIsUndefined() then
+		param.split('Evol')->first()
+	else
+		''
+	endif;
+---------------------------------------------------------------------------------
+--        __          ___ ___ _               _  _        _   _
+--       |_  |   /_\   |   | |_ |\ |   |_| | |_ |_| /_\  |_| |  |_| \ /
+--       |   |_ /   \  |   | |_ | \|   | | | |_ |\ /   \ |\  |_ | |  |
+--------------------------------------------------------------------------------
+helper def : DiffSize : Integer = 6;
+helper def : MOFSize : Integer = 5;	
+helper def : sourceMM : String = 'ExamXML';
+helper def : targetMM : String = 'AssistantMVC';
+helper def : targetMMPrefix_Flattenhierarchy : String = 'AssistantMVC!';
+helper def : indexFlattenhierarchy : Integer = 1;
+
+--returns if param is son of param2
+helper def : isSonSource (param : String, param2 : String) : Boolean =
+	self.containsString(param,self.getSonsRecursiveSource(Sequence{param2}));
+
+
+--returns: Sequence('ExamElement')
+helper def : getFlattenedClass : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Flatten_hierarchy).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Flatten_hierarchy)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveModelElement))
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+
+	
+
+helper def : getAttributesFromClass (param : String) : Sequence(String) =
+--	Ecore!EClassifier.allInstances()->select(e|e.name=param)
+--	->collect(e|e.eAllAttributes)->first()->collect(e|e.toString().split('!')->last());
+	if Ecore!EClassifier.allInstances()->select(e|e.name=param).size()>0 then
+		Ecore!EClassifier.allInstances()->select(e|e.name=param)
+		->collect(e|e.eAllAttributes)->first()->collect(e|e.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+	
+
+helper def : deleteRule_Flattenhierarchy (param : Sequence(ATL!MatchedRule)) : Sequence(ATL!MatchedRule) =
+	let elements : Sequence(String) = self.getFlattenedClass
+	in elements->iterate(p; y : Sequence(ATL!MatchedRule) = param |
+		if self.contains(p, param) then
+			self.deleteRule_Flattenhierarchy(y->excluding(param->at(self.index(p, param))))
+		else
+			y
+		endif
+	)
+	;
+helper def : index (param1 : String, param2 : Sequence(ATL!MatchedRule)) : Integer =
+	param2->iterate(p; y : Integer = 0 |
+		if p.inPattern.elements->first().type.name = param1 then
+			param2->indexOf(p)
+		else
+			y
+		endif
+	);
+helper def : contains (param1 : String, param2 : Sequence(ATL!MatchedRule)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p.inPattern.elements->first().type.name = param1 then
+			true
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	);
+--returns if param1 is in param2
+helper def : containsString (param1 : String, param2 : Sequence(String)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p = param1 then
+			true
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	)
+	;
+helper def : deletedBindings : Sequence(ATL!Binding) =
+	if self.getFlattenedClass.size()>0 then
+		if self.getAttributesFromClass(self.getFlattenedClass->first()).size()>0 then
+			ATL!Binding.allInstances()->select(e|self.containsString(e.propertyName,
+			self.getAttributesFromClass(self.getFlattenedClass->first())))
+		else
+			Sequence{}
+		endif
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : deletedRule : Sequence(ATL!MatchedRule) =
+	ATL!MatchedRule.allInstances()
+	->select(e|e.inPattern.elements->first().type.name=self.getFlattenedClass->first());
+
+helper def : elementIncludeBinding (param : ATL!SimpleOutPatternElement) : Boolean =
+	if not param.bindings.oclIsUndefined() then
+		if self.getFlattenedClass.size()>0 then
+			param.bindings->select(e|e.value.oclIsTypeOf(ATL!NavigationOrAttributeCallExp))
+			->select(e|self.containsString(e.value.name,
+			self.getAttributesFromClass(self.getFlattenedClass->first()))).size()>0
+		else
+			false
+		endif
+		
+	else
+		false
+	endif;
+
+helper def : deletedBindingOutPatterns_Flattenhierarchy : Sequence(String) =
+	ATL!SimpleOutPatternElement.allInstances()->select(e|self.elementIncludeBinding(e))
+	->collect(e|e.type.name.toString());
+
+helper def : getEqualSimmilarity (param : String) : String =
+	AMW!Equal.allInstances()->asSequence()->
+		select(p | p.name.startsWith(param) and p.similarity > 0.5)->first().name.split('_')->first();
+
+--Returns true if exists new metaproperty
+helper def : existAddModelElement : Boolean =
+	not DIFF!AddModelElement.allInstances()->asSequence()->select(e|e.leftParent.toString().substring(self.DiffSize,e.leftParent.toString().size()) <> self.sourceMM)->first().oclIsUndefined();
+
+-----------------------------TARGET---------------------------------------------
+helper def : getDiffModel : String =
+	DIFF!DiffModel.allInstances()
+	->collect(e|e.left.toString().split('!')->last().split('/')->last().split('\\.')->first())->first();
+
+helper def : deleteEliminateMetaclass_Flattenhierarchy_target (param : Sequence(ATL!SimpleOutPatternElement)) : Sequence(ATL!SimpleOutPatternElement) =
+	let elements : Sequence(String) = self.getFlattenedClass
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.containsEliminateMetaclass_Flattenhierarchy_target(p, param) then
+		 	y->excluding(param->at(self.indexEliminateMetaclass_Flattenhierarchy_target(p, param)))
+		else
+			y
+		endif
+	)
+	;
+--param: Sequence{'View'}
+--returns: Sequence{'view'}
+helper def : transformClassesToVariables (param : Sequence(String)) : Sequence(String) =
+	param->iterate(p; y : Sequence(String) = Sequence{} |
+		if ATL!SimpleOutPatternElement.allInstances()->select(e|e.type.name=p).size()>0 then
+			y->append(ATL!SimpleOutPatternElement.allInstances()->select(e|e.type.name=p)->collect(e|e.varName)->first())
+		else
+			y
+		endif
+	);
+--param2 : view2
+helper def : deletedOutPattern_Flattenhierarchy (param : Sequence(ATL!SimpleOutPatternElement), param2 : String) : Boolean =
+	param->select(e|e.type.name=self.getFlattenedClass->first()).size()>0 and --'View'
+	param->select(e|e.varName=param2).size()>0;
+
+--param2 : View
+helper def : deletedOutPattern2_Flattenhierarchy (param : Sequence(ATL!SimpleOutPatternElement), param2 : String) : Boolean =
+	param->select(e|e.type.name=self.getFlattenedClass->first()).size()>0; --'View'
+
+--param: View
+--returns: true if param belongs to the affected rule
+--helper def : belongsToDeletedRule (param : String) :  Boolean =
+--	ATL!MatchedRule.allInstances()
+--	->select(e|self.deletedOutPattern2_Flattenhierarchy(e.outPattern.elements, param)).size()>0;
+
+--returns the name of the affected rule
+helper def : deletedRule_Flattenhierarchy (param : String) : String =
+	ATL!MatchedRule.allInstances()
+	->select(e|self.deletedOutPattern2_Flattenhierarchy(e.outPattern.elements, param))
+	->collect(e|e.name)->first();
+
+helper def : deleteBinding_Flattenhierarchy_target (param : Sequence(ATL!Binding)) : Sequence(ATL!Binding) =
+	--elements = Sequence{'view'}
+	let elements : Sequence(String) = self.transformClassesToVariables(self.getFlattenedClass)
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.containsBinding(p, param) then
+		 	y->excluding(param->at(self.indexBinding_Removeclass(p, param)))
+		else
+			y
+		endif
+	)
+	;
+helper def : containsEliminateMetaclass_Flattenhierarchy_target (param1 : String, param2 : Sequence(ATL!SimpleOutPatternElement)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p.type.name = param1 then
+			true
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	)
+	;
+helper def : indexEliminateMetaclass_Flattenhierarchy_target (param1 : String, param2 : Sequence(ATL!SimpleOutPatternElement)) : Integer =
+	param2->iterate(p; y : Integer = 0 |
+		if p.type.name = param1 then
+			param2->indexOf(p)
+		else
+			y
+		endif
+	)
+	;
+
+helper def : deletedBindings_Flattenhierarchy_target : Sequence(ATL!Binding) =
+--	if self.getFlattenedClass.size()>0 then
+--		if self.getAttributesFromClass(self.getFlattenedClass->first()).size()>0 then
+--			ATL!SimpleOutPatternElement.allInstances()->select(e|e.type.name=self.getFlattenedClass->first())
+--			->collect(e|e.bindings)->first()
+--			->select(e|self.containsString(e.propertyName,self.getAttributesFromClass(self.getFlattenedClass->first())))
+--		else
+--			Sequence{}
+--		endif
+--	else
+--		Sequence{}
+--	endif;
+	
+	if self.getFlattenedClass.size()>0 then
+		if self.getAttributesFromClass(self.getFlattenedClass->first()).size()>0 then
+			ATL!SimpleOutPatternElement.allInstances()->flatten()
+			->select(e|e.type.name=self.getFlattenedClass->first())->collect(e|e.bindings)->flatten()
+			
+		else
+			Sequence{}
+		endif
+	else
+		Sequence{}
+	endif;
+---------------------------------------------------------------------------------
+--         _      _      _  _  _  _  _  _  ___
+--    |\/|| |\  /|_     |_||_|| ||_||_ |_|  | \ /
+--    |  ||_| \/ |_     |  |\ |_||  |_ |\   |  |
+----------------------------------------------------------------------------------
+-----------------------------------Target-----------------------------------------
+helper def : MMSize : Integer = 11;
+helper def : EcoreSize : Integer = 7;
+helper def : diffSize : Integer = 6;
+helper def : resultXXSize : Integer = 10;
+helper def : resultSize : Integer = 8;
+helper def : indexMoveMetaproperty : Integer = 1;
+
+helper def : getMoveModelElement : Sequence(String) =
+	DIFF!MoveModelElement.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->collect(e|e.rightElement.toString().split('!')->last());
+helper def : getMoveModelElementRight : Sequence(String) =
+	DIFF!MoveModelElement.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->collect(e|e.rightTarget.toString().split('!')->last());
+helper def : getMoveModelElementLeft : Sequence(String) =
+	DIFF!MoveModelElement.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->collect(e|e.leftTarget.toString().split('!')->last());
+
+helper def : deletedBindings_Movemetaproperty : Sequence(ATL!Binding) =
+	ATL!Binding.allInstances()->select(e|e.propertyName=self.getMoveModelElement->first());
+
+helper def : elementIncludeBinding_Movemetaproperty (param : ATL!SimpleOutPatternElement) : Boolean =
+	if not param.bindings.oclIsUndefined() then
+		param.bindings->select(e|e.propertyName=self.getMoveModelElement->first()).size()>0
+	else
+		false
+	endif;
+
+helper def : deletedBindingOutPatterns_Movemetaproperty (param : Sequence(ATL!SimpleOutPatternElement)) : Boolean =
+	param->select(e|self.elementIncludeBinding_Movemetaproperty(e)).size()>0;
+
+--moved attribute in the target MM
+helper def : deletedRule_Movemetaproperty : Sequence(ATL!MatchedRule) =
+	ATL!MatchedRule.allInstances()
+	->select(e|self.deletedBindingOutPatterns_Movemetaproperty(e.outPattern.elements));
+
+--Retrieve added metaproperties
+helper def : idAddMetaproperty_Movemetaproperty : Integer = 1;
+
+--Returns true if exists new metaproperty
+helper def : existAddModelElement_Movemetaproperty : Boolean =
+	not DIFF!AddModelElement.allInstances()->asSequence()
+	->select(e|e.leftParent.toString().split('!')->last() <> self.sourceMM)->first().oclIsUndefined();
+
+helper def : delete (param : Sequence(ATL!Binding)) : Sequence(ATL!Binding) =
+	let elements : Sequence(String) = self.getMoveModelElement
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.contains_Movemetaproperty(p, param) then
+		 	y->excluding(param->at(self.index_Movemetaproperty(p, param)))
+		else
+			y
+		endif
+	)
+	;
+
+helper def : contains_Movemetaproperty (param1 : String, param2 : Sequence(ATL!Binding)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p.propertyName = param1 then
+			true
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	)
+	;
+--añadir _Movemetaproperty	
+helper def : index_Movemetaproperty (param1 : String, param2 : Sequence(ATL!Binding)) : Integer =
+	param2->iterate(p; y : Integer = 0 |
+		if p.propertyName = param1 then
+			param2->indexOf(p)
+		else
+			y
+		endif
+	)
+	;
+---------------------------------Source--------------------------------------------
+helper def : containsType (param : Sequence(Ecore!EStructuralFeature), param2 : String) : Boolean =
+	param->select(e|e.eType.toString().split('!')->last()=param2).size()>0;
+
+--param: source, param2: target. Example: param: 'ExamElement', param2: 'Evaluation'
+--return the number of steps between classes param and param2
+helper def : path (param : String, param2 : String) : Integer =
+	if Ecore2!EClassifier.allInstances()->select(e|self.containsType(e.eStructuralFeatures, param))->first().name=param2 then
+		1
+	else
+		1 + self.path(Ecore2!EClassifier.allInstances()->select(e|self.containsType(e.eStructuralFeatures, param))->first().name, param2)
+	endif;
+
+----------------------------------------------------------------------------------
+--            _   ___  _       _ ___        _ ___       _          _  _
+--           |_ \/ |  |_| /_\ |   |    |\/||_  |  /_\  |  |   /_\ |_ |_ 
+--           |_ /\ |  |\ /   \|_  |    |  ||_  | /   \ |_ |_ /   \ _| _|
+---------------------------------------------------------------------------------
+
+helper def : getAddedClass : String =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Extract_metaclass).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Extract_metaclass)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!AddModelElement))
+		->collect(e|e.rightElement.toString().split('!')->last())->first()
+	else
+		''
+	endif;
+	
+--Sequence{'OEAttribute'}
+helper def : getRemoveModelElementLeft : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Extract_metaclass).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Extract_metaclass)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveModelElement))
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+--returns Sequence{'OpenView'}	
+helper def : getRemoveModelElementRight : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Extract_metaclass).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Extract_metaclass)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveModelElement))
+		->collect(e|e.rightParent.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+--extracted class in the source
+helper def : deletedBindings_Extractmetaclass : Sequence(ATL!Binding) =
+	ATL!Binding.allInstances()->select(e|e.value.oclIsTypeOf(ATL!NavigationOrAttributeCallExp))
+	->select(e|e.value.name=self.getRemoveModelElementLeft->first());
+
+helper def : deletedRule_Extractmetaclass : Sequence(ATL!MatchedRule) =
+	ATL!MatchedRule.allInstances()->
+	select(e|e.inPattern.elements->first().type.name = self.getRemoveModelElementRight->first());
+
+helper def : elementIncludeBinding_Extractmetaclass (param : ATL!SimpleOutPatternElement) : Boolean =
+	if not param.bindings.oclIsUndefined() then
+		param.bindings->select(e|e.value.oclIsTypeOf(ATL!NavigationOrAttributeCallExp))
+		->select(e|e.value.name=self.getRemoveModelElementLeft->first()).size()>0
+	else
+		false
+	endif;
+
+helper def : deletedBindingOutPattern_Extractmetaclass : String =
+	ATL!SimpleOutPatternElement.allInstances()
+	->select(e|self.elementIncludeBinding_Extractmetaclass(e))->collect(e|e.type.name.toString())->first();
+
+--Returns true if exists new metaproperty
+--helper def : existAddModelElement : Boolean =
+--	not DIFF!AddModelElement.allInstances()->asSequence()
+--	->select(e|e.leftParent.toString().substring(self.DiffSize,e.leftParent.toString().size()) <> self.sourceMM)->first().oclIsUndefined();
+
+helper def : delete_Extractmetaclass (param : Sequence(ATL!Binding)) : Sequence(ATL!Binding) =
+	--elements = Sequence{'OEAttribute'}
+	let elements : Sequence(String) = self.getRemoveModelElementLeft
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.contains_Extractmetaclass(p, param) then
+		 	y->excluding(param->at(self.index_Extractmetaclass(p, param)))
+		else
+			y
+		endif
+	);
+
+helper def : contains_Extractmetaclass (param1 : String, param2 : Sequence(ATL!Binding)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p.value.oclIsTypeOf(ATL!NavigationOrAttributeCallExp) then
+			if p.value.name = param1 then
+				true
+			else
+				if y = true then
+					true
+				else
+					false
+				endif
+			endif
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	)
+	;
+
+helper def : index_Extractmetaclass (param1 : String, param2 : Sequence(ATL!Binding)) : Integer =
+	param2->iterate(p; y : Integer = 0 |
+		if p.value.oclIsTypeOf(ATL!NavigationOrAttributeCallExp) then
+			if p.value.name = param1 then
+				param2->indexOf(p)
+			else
+				y
+			endif
+		else
+			y
+		endif
+	)
+	;
+-------------------------------------Target----------------------------------------
+--param2 : OpenView
+helper def : deletedOutPattern_Extractmetaclass_target (param : Sequence(ATL!SimpleOutPatternElement)) : Boolean =
+	param->flatten()->select(e|e.type.name=self.getRemoveModelElementRight->first()).size()>0;
+	
+--param: OpenQuestion
+--returns: true if param belongs to the affected rule
+helper def : belongsToDeletedRule_Extractmetaclass_target (param : String) :  Boolean =
+	ATL!MatchedRule.allInstances()->select(e|e.name=param)->select(e|not e.outPattern.oclIsUndefined())
+	->select(e|self.deletedOutPattern_Extractmetaclass_target(e.outPattern.elements)).size()>0;
+
+helper def : delete_Extractmetaclass_target (param : Sequence(ATL!Binding)) : Sequence(ATL!Binding) =
+	--elements = Sequence{'style'}
+	let elements : Sequence(String) = self.getRemoveModelElementLeft
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.contains_Extractmetaclass_target(p, param) then
+		 	y->excluding(param->at(self.index_Extractmetaclass_target(p, param)))
+		else
+			y
+		endif
+	);
+
+helper def : contains_Extractmetaclass_target (param1 : String, param2 : Sequence(ATL!Binding)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p.propertyName = param1 then
+			true
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	)
+	;
+
+helper def : index_Extractmetaclass_target (param1 : String, param2 : Sequence(ATL!Binding)) : Integer =
+	param2->iterate(p; y : Integer = 0 |
+		if p.propertyName = param1 then
+			param2->indexOf(p)
+		else
+			y
+		endif
+	);
+	
+helper def : deletedBindings_Extractmetaclass_target : Sequence(ATL!Binding) =
+	ATL!Binding.allInstances()
+	->select(e|e.propertyName=self.getRemoveModelElementLeft->first());
+----------------------------------------------------------------------------------
+--                           _             _ ___       _          _  _
+--           | |\ | |  ||\ ||_        |\/||_  |  /_\  |  |   /_\ |_ |_ 
+--           | | \| |_ || \||_        |  ||_  | /   \ |_ |_ /   \ _| _|
+---------------------------------------------------------------------------------
+helper def : getAddedClass_Inlinemetaclass : String =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Inline_metaclass).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Inline_metaclass)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!AddModelElement))
+		->collect(e|e.rightElement.toString().split('!')->last())->first()
+	else
+		''
+	endif;
+	
+--Sequence{'OEAttribute'}
+helper def : getMoveMetaproperty : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Inline_metaclass).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Inline_metaclass)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!MoveMetaproperty))
+		->collect(e|e.metaproperty)
+	else
+		Sequence{}
+	endif;
+	
+helper def : getRemoveModelElement : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Inline_metaclass).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Inline_metaclass)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveModelElement))
+		->collect(e|e.leftElement.toString().split('!')->last())->first()
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : getAddedMetaclasses : Sequence (String) =
+	Sequence{self.getAddedClass_Inlinemetaclass};
+
+--inlined class in the source
+helper def : deletedBindings_Inlinemetaclass : Sequence(ATL!Binding) =
+	ATL!Binding.allInstances()->select(e|e.value.oclIsTypeOf(ATL!NavigationOrAttributeCallExp))
+	->select(e|e.value.name=self.getMoveMetaproperty->first());
+
+helper def : deletedRule_Inlinemetaclass : Sequence(ATL!MatchedRule) =
+	ATL!MatchedRule.allInstances()->
+	select(e|e.inPattern.elements->first().type.name = self.getRemoveModelElement);
+
+helper def : elementIncludeBinding_Inlinemetaclass (param : ATL!SimpleOutPatternElement) : Boolean =
+	if not param.bindings.oclIsUndefined() then
+		param.bindings->select(e|e.value.oclIsTypeOf(ATL!NavigationOrAttributeCallExp))
+		->select(e|e.value.name=self.getMoveMetaproperty->first()).size()>0
+	else
+		false
+	endif;
+
+helper def : deletedBindingOutPattern_Inlinemetaclass : String =
+	ATL!SimpleOutPatternElement.allInstances()
+	->select(e|self.elementIncludeBinding_Inlinemetaclass(e))->collect(e|e.type.name.toString())->first();
+
+helper def : getUpdateAttributes : Sequence(String) =
+	Sequence{self.getRemoveModelElement};
+
+helper def : deleteRule_Inlinemetaclass (param : Sequence(ATL!MatchedRule)) : Sequence(ATL!MatchedRule) =
+	let elements : Sequence(String) = self.getUpdateAttributes
+	in elements->iterate(p; y : Sequence(ATL!MatchedRule) = param |
+		if self.contains(p, param) then
+			self.deleteRule_Inlinemetaclass(y->excluding(param->at(self.index(p, param))))
+		else
+			y
+		endif
+	)
+	;
+
+helper def : delete_Inlinemetaclass (param : Sequence(ATL!Binding)) : Sequence(ATL!Binding) =
+	--elements = Sequence{'OEAttribute'}
+	let elements : Sequence(String) = self.getMoveMetaproperty
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.contains(p, param) then
+		 	y->excluding(param->at(self.index(p, param)))
+		else
+			y
+		endif
+	);
+
+---------------------------------------------------------------------------------------------------------
+--           _  _  ___          _  _   ___ _    _  _      _  _  _  ___   _
+--  ||\ ||_||_ |_|| |  /_\ |\ ||  |_    | | |  |  | ||\/||_|| ||_ | |  || ||\ |
+--  || \|| ||_ |\ | | /   \| \||_ |_    | |_|  |_ |_||  ||  |_| _|| |  ||_|| \|
+--------------------------------------------------------------------------------------------------------
+--returns: 'OpenElement'
+helper def : getSon : String =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Inheritance_to_composition).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Inheritance_to_composition)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveReferenceValue))
+		->collect(e|e.rightElement.toString().split('!')->last())->first()
+	else
+		''
+	endif;
+	
+--------------------------------------------------------------------------------------------------------
+--        _   _      _  _           _   _   _     _  _  _ ___     _  _
+--       | _ |_ |\ ||_ |_| /_\ |  |  / |_  |_ | ||_||_ |_| | \ / |_||_ 
+--       |_| |_ | \||_ |\ /   \|_ | /_ |_   _||_||  |_ |\  |  |  |  |_
+-------------------------------------------------------------------------------------------------------
+helper def : getRemoveReferenceValueRight : Sequence(DIFF!ComplexChange) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Generalize_supertype).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Generalize_supertype)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveReferenceValue))
+		->collect(e|e.rightElement.toString().split('!')->last())->first()
+	else
+		Sequence{}
+	endif;
+	
+helper def : getRemoveReferenceValueLeft : String =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Generalize_supertype).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Generalize_supertype)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveReferenceValue))
+		->collect(e|e.leftRemovedTarget.toString().split('!')->last())->first()
+	else
+		''
+	endif;
+	
+helper def : getAddReferenceValueRightElement : String =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Generalize_supertype).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Generalize_supertype)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!AddReferenceValue))
+		->collect(e|e.rightElement.toString().split('!')->last())->first()
+	else
+		''
+	endif;
+	
+helper def : getAddReferenceValueRightAddedTarget : String =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Generalize_supertype).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Generalize_supertype)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!AddReferenceValue))
+		->collect(e|e.rightAddedTarget.toString().split('!')->last())->first()
+	else
+		''
+	endif;
+	
+helper def : delete_Generalizesupertype (param : Sequence(ATL!Binding)) : Sequence(ATL!Binding) =
+	--elements = Sequence{'question'}
+	let elements : Sequence(String) = self.getAttributesFromClass(self.getRemoveReferenceValueLeft)
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.contains_Generalizesupertype(p, param) then
+		 	y->excluding(param->at(self.index_Generalizesupertype(p, param)))
+		else
+			y
+		endif
+	)
+	;
+helper def : contains_Generalizesupertype (param1 : String, param2 : Sequence(ATL!Binding)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p.propertyName = param1 then
+			true
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	)
+	;
+helper def : index_Generalizesupertype (param1 : String, param2 : Sequence(ATL!Binding)) : Integer =
+	param2->iterate(p; y : Integer = 0 |
+		if p.propertyName = param1 then
+			param2->indexOf(p)
+		else
+			y
+		endif
+	)
+	;
+
+----------------------------------------------------------------------------------
+--                           _      _     _   _          _  _
+--           | |\ | |  ||\ ||_     |_ | ||_| |  |   /_\ |_ |_ 
+--           | | \| |_ || \||_      _||_||_| |_ |_ /   \ _| _|
+---------------------------------------------------------------------------------
+--returns: 'OpenElement'
+helper def : getDeletedClass : String =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Inline_subclass).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Inline_subclass)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveModelElement))
+		->collect(e|e.leftElement.toString().split('!')->last())->first()
+	else
+		''
+	endif;
+	
+helper def : getAddModelElementLeft : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Inline_subclass).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Inline_subclass)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!AddModelElement))
+		->collect(e|e.leftParent.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getAddModelElementRight : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Inline_subclass).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Inline_subclass)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!AddModelElement))
+		->collect(e|e.rightElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : getUpdateAttributes_Inlinesubclass : Sequence(String) =
+	--Sequence{'OpenElement'};
+	Sequence{self.getDeletedClass};
+
+helper def : deleteRule_Inlinesubclass (param : Sequence(ATL!MatchedRule)) : Sequence(ATL!MatchedRule) =
+	let elements : Sequence(String) = self.getUpdateAttributes_Inlinesubclass
+	in elements->iterate(p; y : Sequence(ATL!MatchedRule) = param |
+		if self.contains(p, param) then
+			self.deleteRule_Inlinesubclass(y->excluding(param->at(self.index(p, param))))
+		else
+			y
+		endif
+	)
+	;
+
+helper def : elementIncludeBinding_Inlinesubclass (param : ATL!SimpleOutPatternElement) : Boolean =
+	if not param.bindings.oclIsUndefined() then
+		param.bindings->select(e|e.value.oclIsTypeOf(ATL!NavigationOrAttributeCallExp))
+		->select(e|e.value.name=self.getAddModelElementRight->first()).size()>0
+	else
+		false
+	endif;
+
+helper def : deletedBindings_Inlinesubclass : Sequence(ATL!Binding) =
+	ATL!Binding.allInstances()->select(e|e.value.oclIsTypeOf(ATL!NavigationOrAttributeCallExp))
+	->select(e|e.value.name=self.getAddModelElementRight->first());	
+
+helper def : deletedBindingOutPattern_Inlinesubclass : String =
+	ATL!SimpleOutPatternElement.allInstances()
+	->select(e|self.elementIncludeBinding_Inlinesubclass(e))->collect(e|e.type.name.toString())->first();
+	
+helper def : deletedRule_Inlinesubclass : Sequence(ATL!MatchedRule) =
+	ATL!MatchedRule.allInstances()->
+	select(e|e.inPattern.elements->first().type.name = self.getDeletedClass);
+
+---------------------------------------------------------------------------------------------------------
+--   _  _  _  _  _  _      _  _  ___ _         _     ___  _   _  _
+--  |_||_ |_ |_ |_||_ |\ ||  |_   | | |   ||\ |_ |\ | | ||_ ||_ |_|
+--  |\ |_ |  |_ |\ |_ | \||_ |_   | |_|   ||/ |_ | \| | ||  ||_ |\
+---------------------------------------------------------------------------------------------------
+helper def : targetMMPrefix : String = 'Assistant!';
+helper def : sourceMMPrefix : String = 'Exam!';
+helper def : idAddedBinding : Integer = 1;
+
+helper def : getRemoveModelElementLeft_Referencetoidentifier : String =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Reference_to_identifier).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Reference_to_identifier)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveModelElement))
+		->collect(e|e.leftElement.toString().split('!')->last())->first()
+	else
+		''
+	endif;
+	
+helper def : getRemoveModelElementRight_Referencetoidentifier : String =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Reference_to_identifier).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Reference_to_identifier)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveModelElement))
+		->collect(e|e.rightParent.toString().split('!')->last())->first()
+	else
+		''
+	endif;
+	
+helper def : getAddModelElementLeft_Referencetoidentifier : String =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Reference_to_identifier).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Reference_to_identifier)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!AddModelElement))
+		->collect(e|e.leftParent.toString().split('!')->last())->first()
+	else
+		''
+	endif;
+	
+helper def : getAddModelElementRight_Referencetoidentifier : String =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Reference_to_identifier).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Reference_to_identifier)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!AddModelElement))
+		->collect(e|e.rightElement.toString().split('!')->last())->first()
+	else
+		''
+	endif;
+
+helper def : getRemoveModelElements : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Reference_to_identifier).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Reference_to_identifier)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveModelElement))
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+--param: View
+--returns: Sequence{'ExamView','ExanItemView'}
+helper def : getSons (param : String) : Sequence(String) =
+	Ecore!EClassifier.allInstances()->select(e|e.eSuperTypes.size()>0)
+	->select(e|e.eSuperTypes->collect(e|e.toString()).indexOf(self.targetMMPrefix.concat(param)) > 0)->asSequence()
+	->collect(e|e.toString().split('!')->last());
+
+helper def : getSonsSource (param : String) : Sequence(String) =
+	if Ecore!EClassifier.allInstances()->select(e|e.eSuperTypes.size()>0).size()>0 and not param.oclIsUndefined() then
+		Ecore!EClassifier.allInstances()->select(e|e.eSuperTypes.size()>0)
+		->select(e|e.eSuperTypes->collect(e|e.toString()).indexOf(self.sourceMMPrefix.concat(param)) > 0)->asSequence()
+		->collect(e|e.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+--param: Sequence{'View'}
+--returns: Sequence{'View','ExamView','ExanItemView','OpenView','MultipleChoiceView'}
+helper def : getSonsRecursive (param : Sequence(String)) : Sequence(String) =
+	let elements : Sequence(String) = self.getSons(param->last())
+	in elements->iterate(p; y : Sequence(String) = param |
+		if self.getSons(p).size()>0 then
+			self.getSonsRecursive(y.append(p))
+		else
+			y.append(p)
+		endif
+	);
+
+helper def : getSonsRecursiveSource (param : Sequence(String)) : Sequence(String) =
+	if self.getSonsSource(param->last()).size()>0 then
+		let elements : Sequence(String) = self.getSonsSource(param->last())
+		in elements->iterate(p; y : Sequence(String) = param |
+			if self.getSonsSource(p).size()>0 then
+				self.getSonsRecursiveSource(y.append(p))
+			else
+				y.append(p)
+			endif
+		)
+	else
+		Sequence{}
+	endif;
+--	let elements : Sequence(String) = self.getSonsSource(param->last())
+--	in elements->iterate(p; y : Sequence(String) = param |
+--		if self.getSons(p).size()>0 then
+--			self.getSonsRecursiveSource(y.append(p))
+--		else
+--			y.append(p)
+--		endif
+--	);
+
+helper def : deletedBindings_Referencetoidentifier : Sequence(ATL!Binding) =
+	ATL!SimpleOutPatternElement.allInstances()
+	->select(e|self.containsString(e.type.name, self.getSonsRecursiveSource(Sequence{self.getRemoveModelElementRight_Referencetoidentifier})))
+	->collect(e|e.bindings)->flatten()->select(e|e.propertyName=self.getRemoveModelElementLeft_Referencetoidentifier);
+
+helper def : delete_Referencetoidentifier (param : Sequence(ATL!Binding)) : Sequence(ATL!Binding) =
+	--elements = Sequence{'question','value'}
+	let elements : Sequence(String) = self.getRemoveModelElements
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.contains_Referencetoidentifier(p, param) then
+		 	y->excluding(param->at(self.index_Referencetoidentifier(p, param)))
+		else
+			y
+		endif
+	)
+	;
+helper def : contains_Referencetoidentifier (param1 : String, param2 : Sequence(ATL!Binding)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p.propertyName = param1 then
+			true
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	)
+	;
+helper def : index_Referencetoidentifier (param1 : String, param2 : Sequence(ATL!Binding)) : Integer =
+	param2->iterate(p; y : Integer = 0 |
+		if p.propertyName = param1 then
+			param2->indexOf(p)
+		else
+			y
+		endif
+	)
+	;
+
+---------------------------------------------------------------------------------------------------------
+--     _  _     ___      _  _  _  _  _  _      _  _   
+--    |_ |_||  | |      |_||_ |_ |_ |_||_ |\ ||  |_  
+--     _||  |_ | |      |\ |_ |  |_ |\ |_ | \||_ |_  
+---------------------------------------------------------------------------------------------------
+helper def : indexSplitType : Integer = 1;
+
+helper def : getUpdateAttributeRight : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_reference_by_type).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_reference_by_type)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!UpdateAttribute))
+		->collect(e|e.rightElement.toString().split('!')->last())
+		
+	else
+		Sequence{}
+	endif;
+
+helper def : getUpdateAttributeLeft : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_reference_by_type).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_reference_by_type)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!UpdateAttribute))
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getUpdateUniqueReferenceValueRightElement : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_reference_by_type).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_reference_by_type)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!UpdateUniqueReferenceValue))
+		->collect(e|e.rightElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getUpdateUniqueReferenceValueLeftElement : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_reference_by_type).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_reference_by_type)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!UpdateUniqueReferenceValue))
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : getUpdateUniqueReferenceValueRightTarget : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_reference_by_type).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_reference_by_type)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!UpdateUniqueReferenceValue))
+		->collect(e|e.rightTarget.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getUpdateUniqueReferenceValueLeftTarget : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_reference_by_type).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_reference_by_type)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!UpdateUniqueReferenceValue))
+		->collect(e|e.leftTarget.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : getAddModelElementRight_Splittype : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_reference_by_type).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_reference_by_type)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!AddModelElement))
+		->collect(e|e.rightElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getAddModelElementLeft_Splittype : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_reference_by_type).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_reference_by_type)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!AddModelElement))
+		->collect(e|e.leftParent.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+--returns Sequence{'examController','examItemController'}
+helper def : getNewReferences : Sequence(String) =
+	Sequence{self.getUpdateAttributeRight->first(),
+	self.getAddModelElementRight_Splittype->first()};
+	
+--param: examController
+--returns: ExamController
+helper def : getTypeOfRelation (param : String) : String =
+	Ecore!EReference.allInstances()->select(e|e.name=param)
+	->collect(e|e.eType.toString().split('!')->last())->first();
+
+--returns if param is son of param2
+helper def : isSon (param : String, param2 : String) : Boolean =
+	self.containsString(param,self.getSonsRecursive(Sequence{param2}));
+
+helper def : deletedBindings_Splittype : Sequence(ATL!Binding) =
+	ATL!Binding.allInstances()->select(e|e.value.oclIsTypeOf(ATL!VariableExp))
+	->select(e|e.value.referredVariable.varName=self.getUpdateAttributeLeft->first());
+--param: controller
+--returns OpenController
+helper def : typeOfVariable (param : String) : String =
+	ATL!SimpleOutPatternElement.allInstances()
+	->select(e|e.varName=param)->collect(e|e.type.name.toString())->first();
+
+helper def : getSecuencia (param : String) : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_reference_by_type).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_reference_by_type)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!UpdateAttribute))
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+helper def : elementIncludeBinding_Splittype (param : ATL!SimpleOutPatternElement) : Boolean =
+	if not param.bindings.oclIsUndefined() then
+		if self.getSecuencia('').size()>0 then
+			--param.bindings->select(e|self.containsString(e.propertyName,self.getUpdateAttributeLeft)).size()>0
+			param.bindings->select(e|self.containsString(e.propertyName,self.getSecuencia(''))).size()>0
+		else
+			false
+		endif
+		
+	else
+		false
+	endif;
+
+helper def : deletedBindingOutPatterns : Sequence(String) =
+	if ATL!SimpleOutPatternElement.allInstances()
+	->select(e|self.elementIncludeBinding_Splittype(e)).size()>0 then
+		ATL!SimpleOutPatternElement.allInstances()
+		->select(e|self.elementIncludeBinding_Splittype(e))->collect(e|e.type.name.toString())
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : delete_Splittype (param : Sequence(ATL!Binding)) : Sequence(ATL!Binding) =
+	--elements = Sequence{'fontName','fontColor'}
+	let elements : Sequence(String) = self.getUpdateAttributeLeft
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.contains_Splittype(p, param) then
+		 	y->excluding(param->at(self.index_Splittype(p, param)))
+		else
+			y
+		endif
+	)
+	;
+helper def : contains_Splittype (param1 : String, param2 : Sequence(ATL!Binding)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p.propertyName = param1 then
+			true
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	)
+	;
+helper def : index_Splittype (param1 : String, param2 : Sequence(ATL!Binding)) : Integer =
+	param2->iterate(p; y : Integer = 0 |
+		if p.propertyName = param1 then
+			param2->indexOf(p)
+		else
+			y
+		endif
+	)
+	;
+--------------------------------------------------------------------------------------------------
+--  _  _  _  _  _  _ ___           _  _  _   _
+-- |_||_|| ||_||_ |_| | \ /   |\/||_ |_|| _ |_
+-- |  |\ |_||  |_ |\  |  |    |  ||_ |\ |_| |_
+---------------------------------------------------------------------------------------------------
+helper def : indexPropertyMerge : Integer = 1;
+
+helper def : getUpdateAttributeRight_Propertymerge : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Property_merge).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Property_merge)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!UpdateAttribute))
+		->collect(e|e.rightElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getUpdateAttributeLeft_Propertymerge : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Property_merge).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Property_merge)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!UpdateAttribute))
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getRemoveModelElementRight_Propertymerge : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Property_merge).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Property_merge)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveModelElement))
+		->collect(e|e.rightParent.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getRemoveModelElementLeft_Propertymerge : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Property_merge).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Property_merge)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveModelElement))
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : getRemoveModelElements_Propertymerge : Sequence(String) =
+	if self.getUpdateAttributeRight_Propertymerge.size()>0 then
+		Sequence{self.getUpdateAttributeRight_Propertymerge->first().split('\\+')->first(),
+		self.getUpdateAttributeRight_Propertymerge->first().split('\\+')->last()}
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : deletedBindings_Propertymerge : Sequence(ATL!Binding) =
+	ATL!Binding.allInstances()
+	->select(e|self.containsString(e.propertyName,self.getRemoveModelElements_Propertymerge));
+
+helper def : elementIncludeBinding_Propertymerge (param : ATL!SimpleOutPatternElement) : Boolean =
+	if not param.bindings.oclIsUndefined() then
+		param.bindings->select(e|self.containsString(e.propertyName,self.getRemoveModelElements_Propertymerge)).size()>0
+	else
+		false
+	endif;
+
+helper def : deletedBindingOutPatterns_Propertymerge : Sequence(String) =
+	ATL!SimpleOutPatternElement.allInstances()
+	->select(e|self.elementIncludeBinding_Propertymerge(e))->collect(e|e.type.name.toString());
+
+helper def : delete_Propertymerge (param : Sequence(ATL!Binding)) : Sequence(ATL!Binding) =
+	--elements = Sequence{'fontName','fontColor'}
+	let elements : Sequence(String) = self.getRemoveModelElements_Propertymerge
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.contains_Propertymerge(p, param) then
+		 	y->excluding(param->at(self.index_Propertymerge(p, param)))
+		else
+			y
+		endif
+	)
+	;
+helper def : contains_Propertymerge (param1 : String, param2 : Sequence(ATL!Binding)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p.propertyName = param1 then
+			true
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	)
+	;
+helper def : index_Propertymerge (param1 : String, param2 : Sequence(ATL!Binding)) : Integer =
+	param2->iterate(p; y : Integer = 0 |
+		if p.propertyName = param1 then
+			param2->indexOf(p)
+		else
+			y
+		endif
+	)
+	;
+
+--------------------------------------------------------------------------------------------------
+--   _         _  _        _  _  _   _
+--  |  |  /_\ |_ |_   |\/||_ |_|| _ |_
+--  |_ |_/   \ _| _|  |  ||_ |\ |_| |_
+---------------------------------------------------------------------------------------------------
+----------------------------------Source------------------------------------------
+helper def : index : Integer = 1;
+helper def : indexBinding : Integer = 1;
+helper def : indexVariable : Integer = 1;
+helper def : variableDeclarations : Sequence(ATL!VariableDeclaration) = Sequence{};
+helper def : indexClassmerge : Integer = 1;
+
+helper def : getUpdateAttributeRight_Classmerge : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Class_merge).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Class_merge)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!UpdateAttribute))
+		->collect(e|e.rightElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getUpdateAttributeLeft_Classmerge : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Class_merge).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Class_merge)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!UpdateAttribute))
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getRemoveModelElement_Classmerge : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Class_merge).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Class_merge)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveModelElement))
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : getMergedClasses : Sequence(String) =
+	self.getUpdateAttributeLeft_Classmerge.union(self.getRemoveModelElement_Classmerge);
+
+helper def : deletedRule_Classmerge : Sequence(ATL!MatchedRule) =
+	ATL!MatchedRule.allInstances()->
+	select(e|self.containsString(e.inPattern.elements->first().type.name, self.getMergedClasses));
+
+helper def : deleteRule_Classmerge (param : Sequence(ATL!MatchedRule)) : Sequence(ATL!MatchedRule) =
+	let elements : Sequence(String) = self.getMergedClasses
+	in elements->iterate(p; y : Sequence(ATL!MatchedRule) = param |
+		if self.contains(p, param) then
+			self.deleteRule_Classmerge(y->excluding(param->at(self.index(p, param))))
+		else
+			y
+		endif
+	)
+	;
+
+-------------------------------Target---------------------------------------------
+--delete SOPE
+helper def : deleteEliminateMetaclass_Classmerge_target (param : Sequence(ATL!SimpleOutPatternElement)) : Sequence(ATL!SimpleOutPatternElement) =
+	let elements : Sequence(String) = self.getUpdateAttributeLeft_Classmerge
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.containsEliminateMetaclass_Classmerge_target(p, param) then
+		 	y->excluding(param->at(self.indexEliminateMetaclass_Classmerge_target(p, param)))
+		else
+			y
+		endif
+	)
+	;
+helper def : containsEliminateMetaclass_Classmerge_target (param1 : String, param2 : Sequence(ATL!SimpleOutPatternElement)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p.type.name = param1 then
+			true
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	)
+	;
+helper def : indexEliminateMetaclass_Classmerge_target (param1 : String, param2 : Sequence(ATL!SimpleOutPatternElement)) : Integer =
+	param2->iterate(p; y : Integer = 0 |
+		if p.type.name = param1 then
+			param2->indexOf(p)
+		else
+			y
+		endif
+	)
+	;
+helper def : deleteBinding_Classmerge_target (param : Sequence(ATL!Binding)) : Sequence(ATL!Binding) =
+	--elements = Sequence{'view'}
+	let elements : Sequence(String) = self.transformClassesToVariables(self.getUpdateAttributeLeft_Classmerge)
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.containsBinding(p, param) then
+		 	y->excluding(param->at(self.indexBinding_Removeclass(p, param)))
+		else
+			y
+		endif
+	)
+	;
+
+helper def : deletedBindings_Classmerge_target : Sequence(ATL!Binding) =
+	if self.getUpdateAttributeLeft_Classmerge.size()>0 then
+		if self.getAttributesFromClass(self.getUpdateAttributeLeft_Classmerge->first()).size()>0 then
+		--bindings only from deleted SOPE (MultipleChoiceView)
+			ATL!SimpleOutPatternElement.allInstances()->flatten()
+			->select(e|e.type.name=self.getUpdateAttributeLeft_Classmerge->first())->collect(e|e.bindings)->flatten()
+			
+--			ATL!Binding.allInstances()->select(e|self.containsString(e.propertyName,
+--			self.getAttributesFromClass(self.getUpdateAttributeLeft_Classmerge->first())))
+		else
+			Sequence{}
+		endif
+	else
+		Sequence{}
+	endif;
+---------------------------------------------------------------------------------------------------------
+--     _  _     ___      _         _  _
+--    |_ |_||  | |      |  |  /_\ |_ |_
+--     _||  |_ | |      |_ |_/   \ _| _|
+---------------------------------------------------------------------------------------------------
+helper def : index_Splitclass : Integer = 1;
+helper def : indexBinding_Splitclass : Integer = 1;
+
+helper def : getUpdateAttributeRight_Splitclass : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_class).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_class)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!UpdateAttribute))
+		->collect(e|e.rightElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getUpdateAttributeLeft_Splitclass : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_class).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_class)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!UpdateAttribute))
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getAddModelElement_Splitclass : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_class).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_class)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!AddModelElement))
+		->collect(e|e.rightElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getRemoveModelElementRight_Splitclass : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_class).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_class)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveModelElement))
+		->collect(e|e.rightParent.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+helper def : getRemoveModelElementLeft_Splitclass : Sequence(String) =
+	if DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+	->select(e|e.changeType=#Split_class).size()>0 then
+		DIFF!ComplexChange.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.changeType=#Split_class)
+		->collect(e|e.atomicChanges)->first()->select(e|e.oclIsTypeOf(DIFF!RemoveModelElement))
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : getSplittedClasses : Sequence(String) =
+	self.getUpdateAttributeLeft_Splitclass;
+--splitted class in the source
+helper def : deletedBindings_Splitclass : Sequence(ATL!Binding) =
+	ATL!Binding.allInstances()->select(e|e.value.oclIsTypeOf(ATL!NavigationOrAttributeCallExp))
+	->select(e|e.value.name=self.getRemoveModelElementLeft_Splitclass->first());
+
+helper def : getAttributesFromClass2 (param : String) : Sequence(String) =
+	if Ecore2!EClassifier.allInstances()->select(e|e.name=param).size()>0 then
+		Ecore2!EClassifier.allInstances()->select(e|e.name=param)
+		->collect(e|e.eAllAttributes)->first()->collect(e|e.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+--difference between attributes from original and splitted class in param
+helper def : deletedAttributes (param : String) : Sequence(String) =
+	self.getAttributesFromClass(self.getUpdateAttributeLeft->first())
+	->asSet().symetricDifference(self.getAttributesFromClass2(param)->asSet());
+
+helper def : deletedRule_Splitclass : Sequence(ATL!MatchedRule) =
+	ATL!MatchedRule.allInstances()->
+	select(e|self.containsString(e.inPattern.elements->first().type.name, self.getSplittedClasses));
+
+helper def : elementIncludeBinding_Splitclass (param : ATL!SimpleOutPatternElement) : Boolean =
+	if not param.bindings.oclIsUndefined() then
+		param.bindings->select(e|e.value.oclIsTypeOf(ATL!NavigationOrAttributeCallExp))
+		->select(e|e.value.name=self.getRemoveModelElementLeft_Splitclass).size()>0
+	else
+		false
+	endif;
+
+helper def : deletedBindingOutPattern_Splitclass : String =
+	ATL!SimpleOutPatternElement.allInstances()
+	->select(e|self.elementIncludeBinding_Splitclass(e))->collect(e|e.type.name.toString())->first();
+
+helper def : simpleOutPatternElements : Sequence(ATL!SimpleOutPatternElement) =
+	if self.deletedRule_Splitclass.size()>0 then
+		self.deletedRule_Splitclass->first().outPattern.elements
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : deleteRule_Splitclass (param : Sequence(ATL!MatchedRule)) : Sequence(ATL!MatchedRule) =
+	let elements : Sequence(String) = self.getSplittedClasses
+	in elements->iterate(p; y : Sequence(ATL!MatchedRule) = param |
+		if self.contains(p, param) then
+			self.deleteRule_Splitclass(y->excluding(param->at(self.index(p, param))))
+		else
+			y
+		endif
+	)
+	;
+
+helper def : delete_Splitclass (param : Sequence(ATL!Binding)) : Sequence(ATL!Binding) =
+	--elements = Sequence{'OEAttribute'}
+	let elements : Sequence(String) = self.getRemoveModelElements_Splitclass
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.contains(p, param) then
+		 	y->excluding(param->at(self.index(p, param)))
+		else
+			y
+		endif
+	);
+
+------------------------------------------------------------------------------
+--                     _          _  _
+--    /_\ |\ |\       |  |   /_\ |_ |_
+--   /   \|/ |/       |_ |_ /   \ _| _|
+-------------------------------------------------------------------------------
+--Retrieve added metaclasses
+helper def : idAddMetaclass : Integer = 1;
+helper def : getAddedMetaclasses : Sequence(String) =
+	if DIFF!AddModelElement.allInstances().size()>0 then
+		DIFF!AddModelElement.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.leftParent.toString().split('!')->last() = self.sourceMM)
+		->collect(e|e.rightElement.toString())
+	else
+		Sequence{}
+	endif;
+	
+------------------------------------------------------------------------------
+--                     ___ ___  _   _    ___ _
+--    /_\ |\ |\    /_\  |   |  |_|||_|| | | |_
+--   /   \|/ |/   /   \ |   |  |\ ||_||_| | |_
+-------------------------------------------------------------------------------
+helper def : idAddMetaproperty : Integer = 1;
+helper def : getAddedMetaproperties : Sequence(String) =
+	if DIFF!AddModelElement.allInstances().size()>0 then
+		DIFF!AddModelElement.allInstances()->select(e|not e.oclIsUndefined())
+		->asSequence()->select(e|e.leftParent.toString().split('!')->last() <> self.sourceMM)
+		->collect(e|e.rightElement.toString())
+	else
+		Sequence{}
+	endif;
+
+helper def : getAddModelElementLeft_Addattribute : Sequence(ATL!AddModelElement) =
+	if DIFF!AddModelElement.allInstances()->select(e|e.leftParent.toString().split('!')->last() <> self.sourceMM).size()>0 then
+		DIFF!AddModelElement.allInstances()->select(e|e.leftParent.toString().split('!')->last() <> self.sourceMM)
+		->collect(e|e.leftParent.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : getAddModelElementRight_Addattribute : Sequence(ATL!AddModelElement) =
+	if DIFF!AddModelElement.allInstances()->select(e|e.leftParent.toString().split('!')->last() <> self.sourceMM).size()>0 then
+		DIFF!AddModelElement.allInstances()->select(e|e.leftParent.toString().split('!')->last() <> self.sourceMM)
+		->collect(e|e.rightElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : getEqualSimmilarity (param : String) : String =
+	AMW!Equal.allInstances()->asSequence()->
+		select(p | p.name.startsWith(param) and p.similarity > 0.5)->first().name.split('_')->first();
+
+helper context Integer def : reduce() : Integer =
+	if self > thisModule.getAddedMetaproperties.size() then
+		self - thisModule.getAddedMetaproperties.size()
+	else
+		self
+	endif;
+
+helper def : simpleOutPatternHasInPattern (varname : String, inpattern : Sequence(String)) : Boolean =
+--	if ATL!MatchedRule.allInstances()->select(e|not e.inPattern.oclIsUndefined()).size()>0 then
+--		ATL!MatchedRule.allInstances()->select(e|self.containsString(e.inPattern.elements->first().type.name, inpattern)).size()>0
+--	else
+--		false
+--	endif;
+	ATL!MatchedRule.allInstances()->select(e|not e.inPattern.oclIsUndefined())->select(e|self.containsString(e.inPattern.elements->first().type.name, inpattern)).size()>0;
+
+	
+------------------------------------------------------------------------------
+--     _  _               _    _          _  _
+--    |_||_ |\ | /_\ |\/||_   |  |   /_\ |_ |_
+--    |\ |_ | \|/   \|  ||_   |_ |_ /   \ _| _|
+-------------------------------------------------------------------------------
+helper def : idUpdateMetaclass : Integer = 1;
+
+--Retrieve right UpdateAttributes
+helper def : getUpdateAttributesRight : Sequence(String) =
+	if DIFF!UpdateAttribute.allInstances()->asSequence()->select(e|e.attribute.toString().split('!')->last()='name').size()>0 then
+		DIFF!UpdateAttribute.allInstances()->asSequence()->select(e|e.attribute.toString().split('!')->last()='name')
+		->collect(e|e.rightElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+
+--Retrieve left UpdateAttributes
+helper def : getUpdateAttributesLeft : Sequence(String) =
+	if DIFF!UpdateAttribute.allInstances()->asSequence()->select(e|e.refImmediateComposite().changeType<>#Class_merge)->select(e|e.attribute.toString().split('!')->last()='name').size()>0 then
+		DIFF!UpdateAttribute.allInstances()->asSequence()->select(e|e.attribute.toString().split('!')->last()='name')
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+
+--returns the rightElement of the leftElement in the param
+helper def : getUpdateAttributeRightInclude (param : String) : String =
+	if DIFF!UpdateAttribute.allInstances()->asSequence()->select(e|e.attribute.toString().split('!')->last()='name')
+	->select(e|e.leftElement.toString().split('!')->last()=param).size()>0 then
+		DIFF!UpdateAttribute.allInstances()->asSequence()->select(e|e.attribute.toString().split('!')->last()='name')
+		->select(e|e.leftElement.toString().split('!')->last()=param)
+		->collect(e|e.rightElement.toString().split('!')->last())->first()
+	else
+		Sequence{}
+	endif;
+	
+------------------------------------------------------------------------------
+--     _  _      _      _             ___ ___  _   _    ___ _
+--    |_||_ |\/|| |\  /|_         /_\  |   |  |_|||_|| | | |_
+--    |\ |_ |  ||_| \/ |_        /   \ |   |  |\ ||_||_| | |_
+-------------------------------------------------------------------------------
+
+helper def : getRemoveModelElements_Removeattribute : Sequence(String) =
+--	if DIFF!RemoveModelElement.allInstances().size()>0 then
+--		DIFF!RemoveModelElement.allInstances()->asSequence()
+--		->select(e|e.rightParent.toString().split('!')->last().size()>0)
+--		->collect(e|e.leftElement.toString().split('!')->last())
+--	else
+--		Sequence{}
+--	endif;
+	
+	if DIFF!RemoveModelElement.allInstances().size()>0 then
+		if DIFF!UpdateAttribute.allInstances()->asSequence()->select(e|e.refImmediateComposite().changeType<>#Property_merge).size()>0 then
+			DIFF!RemoveModelElement.allInstances()->asSequence()
+			->select(e|e.rightParent.toString().split('!')->last().size()>0)
+			->collect(e|e.leftElement.toString().split('!')->last())
+		else
+			Sequence{}
+		endif
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : delete_Removeattribute (param : Sequence(ATL!Binding)) : Sequence(ATL!Binding) =
+	--elements = Sequence{'question','value'}
+	let elements : Sequence(String) = self.getRemoveModelElements_Removeattribute
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.contains_Removeattribute(p, param) then
+		 	y->excluding(param->at(self.index_Removeattribute(p, param)))
+		else
+			y
+		endif
+	)
+	;
+helper def : contains_Removeattribute (param1 : String, param2 : Sequence(ATL!Binding)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p.propertyName = param1 then
+			true
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	)
+	;
+helper def : index_Removeattribute (param1 : String, param2 : Sequence(ATL!Binding)) : Integer =
+	param2->iterate(p; y : Integer = 0 |
+		if p.propertyName = param1 then
+			param2->indexOf(p)
+		else
+			y
+		endif
+	)
+	;
+helper def : filtermatch (param : String) : Boolean =
+	let elements : Sequence(String) = self.getRemoveModelElements_Removeattribute
+	in elements->iterate(p; y : Boolean = false |
+		if p = param
+		then
+			true
+		else
+			if y = true
+			then
+				true
+			else
+				false
+			endif
+		endif
+	);
+helper def : DeletedAttribute : String = 
+	--'optional';
+	self.getRemoveModelElements_Removeattribute->first();
+
+--minimum deletion	
+--returns if the param is undefined
+helper def : isUndefined(param: ATL!OclAnyType) : Boolean =
+	if param.oclIsTypeOf(ATL!NavigationOrAttributeCallExp) then
+		if param.name = self.DeletedAttribute then
+			true
+		else
+			false
+		endif
+	else
+		if param.oclIsTypeOf(ATL!OperatorCallExp) then
+			if param.operationName = 'and' then
+				thisModule.isUndefined(param.source) and thisModule.isUndefined(param.arguments->first())
+			else
+				if param.operationName = 'or' then
+					thisModule.isUndefined(param.source) or thisModule.isUndefined(param.arguments->first())
+				else
+					if param.operationName = 'not' then
+						thisModule.isUndefined(param.source)
+					else
+						false
+					endif
+				endif
+			endif
+		else
+			false
+		endif
+	endif
+	;
+------------------------------------------------------------------------------
+--     _  _               _           ___ ___  _   _    ___ _
+--    |_||_ |\ | /_\ |\/||_       /_\  |   |  |_|||_|| | | |_
+--    |\ |_ | \|/   \|  ||_      /   \ |   |  |\ ||_||_| | |_
+-------------------------------------------------------------------------------
+	
+--Retrieve right UpdateAttributes
+helper def : getUpdateAttributesRight_Renameattribute : Sequence(String) =
+--	if DIFF!UpdateAttribute.allInstances()->asSequence()->select(e|e.attribute.toString().split('!')->last()='name').size()>0 then
+--		DIFF!UpdateAttribute.allInstances()->asSequence()->select(e|e.attribute.toString().split('!')->last()='name')
+--		->collect(e|e.rightElement.toString().split('!')->last())
+--	else
+--		Sequence{}
+--	endif;
+	
+	if DIFF!UpdateAttribute.allInstances()->asSequence()->select(e|e.refImmediateComposite().changeType<>#Property_merge)->select(e|e.attribute.toString().split('!')->last()='name').size()>0 then
+		DIFF!UpdateAttribute.allInstances()->asSequence()
+		->select(e|e.attribute.toString().split('!')->last()='name')
+		->collect(e|e.rightElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+--Retrieve left UpdateAttributes
+helper def : getUpdateAttributesLeft_Renameattribute : Sequence(String) =
+	--Sequence{'diff!fontName','diff!fontColor'};
+	if DIFF!UpdateAttribute.allInstances()->asSequence()->select(e|e.refImmediateComposite().changeType<>#Property_merge)->select(e|e.attribute.toString().split('!')->last()='name').size()>0 then
+		DIFF!UpdateAttribute.allInstances()->asSequence()
+		->select(e|e.attribute.toString().split('!')->last()='name')
+		->collect(e|e.leftElement.toString().split('!')->last())
+	else
+		Sequence{}
+	endif;
+	
+------------------------------------------------------------------------------
+--     _  _      _      _       _           _  _  
+--    |_||_ |\/|| |\  /|_      |  |    /_\ |_ |_
+--    |\ |_ |  ||_| \/ |_      |_ |_  /   \ _| _|
+-------------------------------------------------------------------------------
+helper def : getRemoveModelElements_Removeclass : Sequence(String) =
+	--Sequence{'controller'};
+	if DIFF!RemoveModelElement.allInstances().size()>0 then
+		DIFF!RemoveModelElement.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.rightParent.toString().split('!')->last().size()=0)
+		->collect(e|e.leftElement.toString().split('!')->last())	
+	else
+		Sequence{}
+	endif;
+	
+helper def : getRemovedMetaclasses : Sequence(String) =
+	if DIFF!RemoveModelElement.allInstances().size()>0 then
+		DIFF!RemoveModelElement.allInstances()->select(e|not e.oclIsUndefined())->asSequence()
+		->select(e|e.rightParent.toString().split('!')->last().size()=0)
+		->collect(e|e.leftElement.toString().split('!')->last())	
+	else
+		Sequence{}
+	endif;
+	
+
+helper def : deleteEliminateMetaclass (param : Sequence(ATL!SimpleOutPatternElement)) : Sequence(ATL!SimpleOutPatternElement) =
+	let elements : Sequence(String) = self.getRemoveModelElements_Removeclass
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.containsEliminateMetaclass(p, param) then
+		 	y->excluding(param->at(self.indexEliminateMetaclass(p, param)))
+		else
+			y
+		endif
+	)
+	;
+helper def : containsEliminateMetaclass (param1 : String, param2 : Sequence(ATL!SimpleOutPatternElement)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p.varName = param1 then
+			true
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	)
+	;
+helper def : indexEliminateMetaclass (param1 : String, param2 : Sequence(ATL!SimpleOutPatternElement)) : Integer =
+	param2->iterate(p; y : Integer = 0 |
+		if p.varName = param1 then
+			param2->indexOf(p)
+		else
+			y
+		endif
+	)
+	;
+helper def : deleteBinding_Removeclass (param : Sequence(ATL!Binding)) : Sequence(ATL!Binding) =
+	--elements = Sequence{'controller'}
+	let elements : Sequence(String) = self.getRemoveModelElements_Removeclass
+	in elements->iterate(p; y : Sequence(ATL!Binding) = param |
+		if self.containsBinding(p, param) then
+		 	y->excluding(param->at(self.indexBinding_Removeclass(p, param)))
+		else
+			y
+		endif
+	)
+	;
+helper def : containsBinding (param1 : String, param2 : Sequence(ATL!Binding)) : Boolean =
+	param2->iterate(p; y : Boolean = false |
+		if p.value.referredVariable.varName = param1 then
+			true
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+	)
+	;
+helper def : indexBinding_Removeclass (param1 : String, param2 : Sequence(ATL!Binding)) : Integer =
+	param2->iterate(p; y : Integer = 0 |
+		if p.value.referredVariable.varName = param1 then
+			param2->indexOf(p)
+		else
+			y
+		endif
+	)
+	;
+--#############################################################################
+--################################################################################
+--##############################################################################
+--###############################################################################
+--##############################################################################
+--#############################################################################
+--############################################################################
+--#######################RULES################################################
+--#############################################################################
+--#############################################################################
+--###############################################################################
+--#################################################################################
+--#################################################################################
+--#################################################################################
+--#################################################################################
+---------------------------------------------------------------------------------
+--        __          ___  _               _  _        _   _
+--       |_  |   /_\   |  |_ |\ |   |_| | |_ |_| /_\  |_| |  |_| \ /
+--       |   |_ /   \  |  |_ | \|   | | | |_ |\ /   \ |\  |_ | |  |
+--------------------------------------------------------------------------------	
+rule Module {
+	from
+		s : ATL!Module(
+			if self.getFlattenedClass.size()>0 then
+				true
+			else
+				false
+			endif
+		)
+	to
+		t : ATL!Module (
+			name <- s.name,
+			libraries <- s.libraries,
+			isRefining <- s.isRefining,
+			inModels <- s.inModels,
+			outModels <- s.outModels,
+			--delete rules which source is flattened class
+			--elements <- s.elements
+			elements <- self.deleteRule_Flattenhierarchy(s.elements)
+		
+		)
+		do{
+			'Flatten hierarchy module'.println();
+			self.getDiffModel->toString().println();
+		}
+}
+
+rule SimpleOutPatternElement_Flattenhierarchy {
+	from
+		s : ATL!SimpleOutPatternElement(
+			if 	self.getFlattenedClass.size()>0 and self.getDiffModel<>self.targetMM then
+			true
+		else
+			false
+		endif
+		)
+
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			bindings <- s.bindings
+			
+		)
+	do {
+			'Flatten hierarchy SOPE'.println();
+						
+			if (s.type.name=self.deletedBindingOutPatterns_Flattenhierarchy->first()) {
+				t.bindings <- t.bindings->append(thisModule.Binding2Binding_Flattenhierarchy(t.bindings));
+				
+			}else{
+				false;
+			}
+				
+		}
+}
+
+--add metaproperty
+lazy rule Binding2Binding_Flattenhierarchy {
+	from
+		s : ATL!Binding
+
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.deletedBindings->first().propertyName,
+			value <- arg,
+			commentsBefore <- Set {'--comment'}
+		),
+		--xml.optional
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- self.deletedRule->first().inPattern.elements->first().varName,
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- 'name',
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- self.sourceMM	
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- self.deletedBindings->first().value.name,
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- ipe_i_c2	
+		)
+		do{
+			'Binding2Binding_Flattenhierarchy'.println();
+		}
+		
+}
+---------------------------Target------------------------------------------
+--delete OutPattern
+rule OutPattern_Flattenhierarchy_target {
+	from
+		s : ATL!OutPattern(
+		if 	self.getFlattenedClass.size()>0 and self.getDiffModel=self.targetMM then
+			true
+		else
+			false
+		endif
+		)
+	to
+		t : ATL!OutPattern (
+			elements <- self.deleteEliminateMetaclass_Flattenhierarchy_target(s.elements)
+		)
+		do{
+		'OutPattern_Flattenhierarchy_target'.println();
+	}
+}
+--delete bindings
+rule SimpleOutPatternElement_Flattenhierarchy_target {
+	from
+		s : ATL!SimpleOutPatternElement(
+		if 	self.getFlattenedClass.size()>0 and self.getDiffModel=self.targetMM
+		and not self.isSonSource(s.type.name, self.getFlattenedClass->first()) then
+			true
+		else
+			false
+		endif
+		)
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			--bindings <- s.bindings->union(self.deletedBindings_Flattenhierarchy_target)
+			bindings <- self.deleteBinding_Flattenhierarchy_target(s.bindings->select(e|e.value.oclIsKindOf(ATL!VariableExp)))->union(s.bindings->select(e|not e.value.oclIsKindOf(ATL!VariableExp)))
+		)
+	do{
+		'SimpleOutPatternElement_Flattenhierarchy_target'.println();
+		
+		--es igual a algún hijo de View
+		--if (s.type.name='OpenView' and s.varName='view2') {
+		if (self.isSonSource(s.type.name, self.getFlattenedClass->first()) and s.type.name=self.getFlattenedClass->first() ) {
+			for (iterator in self.deletedBindings_Flattenhierarchy_target){
+				if (self.deletedBindings.at(self.indexFlattenhierarchy).value.oclIsTypeOf(ATL!StringExp)){
+					'B2BString'.println();
+					t.bindings <- t.bindings->append(self.B2BString_Flattenhierarchy_target(t.bindings));
+				}else{
+					'Binding2Binding_Flattenhierarchy_target'.println();
+					t.bindings <- t.bindings->append(self.Binding2Binding_Flattenhierarchy_target(t.bindings));
+				}
+			self.indexFlattenhierarchy <- self.indexFlattenhierarchy + 1;
+			}
+			
+			
+		}else{
+			false;
+		}
+	}
+}
+--add bindings
+rule SimpleOutPatternElement_Flattenhierarchy_target_Add {
+	from
+		s : ATL!SimpleOutPatternElement(
+		if 	self.getFlattenedClass.size()>0 and self.getDiffModel=self.targetMM
+		and self.isSonSource(s.type.name, self.getFlattenedClass->first())
+		and s.refImmediateComposite().refImmediateComposite().name = self.deletedRule_Flattenhierarchy(self.getFlattenedClass->first()) then
+			true
+		else
+			false
+		endif
+		)
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			bindings <- s.bindings->union(self.deletedBindings_Flattenhierarchy_target)
+			
+		)
+	do{
+		'SimpleOutPatternElement_Flattenhierarchy_target_Add'.println();
+		self.deletedRule_Flattenhierarchy('View').println();
+		s.refImmediateComposite().refImmediateComposite().name.println();
+		--es igual a algún hijo de View
+		--if (s.type.name='OpenView' and s.varName='view2') {
+--		if (self.isSonSource(s.type.name, self.getFlattenedClass->first()) and s.type.name=self.getFlattenedClass->first() ) {
+--			for (iterator in self.deletedBindings_Flattenhierarchy_target){
+--				if (self.deletedBindings.at(self.indexFlattenhierarchy).value.oclIsTypeOf(ATL!StringExp)){
+--					'B2BString'.println();
+--					t.bindings <- t.bindings->append(self.B2BString_Flattenhierarchy_target(t.bindings));
+--				}else{
+--					'Binding2Binding_Flattenhierarchy_target'.println();
+--					t.bindings <- t.bindings->append(self.Binding2Binding_Flattenhierarchy_target(t.bindings));
+--				}
+--			self.indexFlattenhierarchy <- self.indexFlattenhierarchy + 1;
+--			}
+--			
+--			
+--		}else{
+--			false;
+--		}
+	}
+}
+--add metaproperty
+lazy rule Binding2Binding_Flattenhierarchy_target {
+	from
+		s : ATL!Binding
+
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.deletedBindings->first().propertyName,
+			value <- arg,
+			commentsBefore <- Set {'--comment'}
+		),
+		--xml.optional
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- 'xml',
+			--varName <- self.deletedRule->first().inPattern.elements->first().varName,
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- 'name',
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- self.sourceMM	
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- self.deletedBindings->first().value.name,
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- ipe_i_c2	
+		)
+		do{
+			'Binding2Binding_Flattenhierarchy_target'.println();
+		}
+		
+}
+
+--Binding when binding.value is StringExp
+lazy rule B2BString_Flattenhierarchy_target {
+	from
+		s : ATL!Binding
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.deletedBindings.at(self.indexFlattenhierarchy).propertyName,
+			value <- se
+			--commentsBefore <- Set {'--comment'}
+		),
+		se : ATL!StringExp (
+			stringSymbol <- self.deletedBindings.at(self.indexFlattenhierarchy).value.stringSymbol	
+		)
+		do{
+			'B2BString_Flattenhierarchy_target'.println();
+		}
+}
+---------------------------------------------------------------------------------
+--         _      _      _  _  _  _  _  _  ___
+--    |\/|| |\  /|_     |_||_|| ||_||_ |_|  | \ /
+--    |  ||_| \/ |_     |  |\ |_||  |_ |\   |  |
+----------------------------------------------------------------------------------
+--------------------------------Target----------------------------------------------
+rule SimpleOutPatternElement_Movemetaproperty {
+	from
+		s : ATL!SimpleOutPatternElement(
+			if self.getMoveModelElement.size()>0 
+			and self.filterDiffModel(self.getDiffModel)=self.targetMM then
+				true
+			else
+				false
+			endif
+		)
+
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			--bindings <- s.bindings
+			--Delete metaproperty if it uses a moved attribute
+			bindings <- self.delete(s.bindings)
+		)
+	do {
+			'SimpleOutPatternElement_Movemetaproperty'.println();
+			self.getMoveModelElement->toString().println();
+			self.getMoveModelElementRight->toString().println();
+			self.getMoveModelElementLeft->toString().println();
+			--t.bindings <- t.bindings->append(self.deletedBindings->first()->first());
+			--Binding is added if the OutPattern is equal to the leftTarget of moved attribute
+			if (s.type.name=self.getMoveModelElementLeft->first()) {
+				t.bindings <- t.bindings->append(thisModule.Binding2Binding_Movemetaproperty(t.bindings));
+				
+			}else{
+				false;
+			}
+				
+		}
+}
+
+lazy rule Binding2Binding_Movemetaproperty {
+	from
+		s : ATL!Binding
+
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.deletedBindings_Movemetaproperty->first().propertyName,
+			value <- arg,
+			commentsBefore <- Set {'--comment'}
+		),
+		--xml.optional
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- self.deletedRule_Movemetaproperty->first().inPattern.elements->first().varName,
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- 'name',
+			model <- om
+		),
+		om : ATL!OclModel (
+			--Source MM name
+			name <- self.sourceMM
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- self.deletedBindings_Movemetaproperty->first().value.name,
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- ipe_i_c2	
+		)
+		do{
+			'Binding2Binding_Movemetaproperty'.println();
+		}
+		
+}
+------------------------------Source--------------------------------------------
+rule Binding_Movemetaproperty_source {
+	from
+		s : ATL!Binding
+		(
+			if self.filterDiffModel(self.getDiffModel)<>self.targetMM then
+				if not s.value.oclIsUndefined() then
+					if s.value.oclIsTypeOf(ATL!NavigationOrAttributeCallExp) then
+						if s.value.name = self.getMoveModelElement->first() then
+							true
+						else
+							false
+						endif
+					else
+						false
+					endif
+				else
+					false
+				endif
+			else
+				false
+			endif
+		)
+	to
+		t : ATL!Binding(
+			propertyName <- s.propertyName,
+			--value <- s.value,
+			value <- noace,
+			outPatternElement <- s.outPatternElement
+		),
+		noace : ATL!NavigationOrAttributeCallExp (
+			name <- s.value.name, --'question'
+			--source <- oce
+			source <- s.value.source
+		)
+--		oce : ATL!OperationCallExp (
+--			operationName <- 'refInmediateComposite',
+--			source <- oce2
+--		),
+--		oce2 : ATL!OperationCallExp (
+--			operationName <- 'refInmediateComposite',
+--			source <- s.value.source
+--		)
+		do {
+			self.path('ExamElement','Evaluation')->toString().println();
+			'Binding_Movemetaproperty_source'.println();
+			noace.source <- self.B2OCE_Movemetaproperty_source(s);
+		}
+}
+
+lazy rule B2OCE_Movemetaproperty_source{
+	from
+		s : ATL!Binding
+	to
+		t : ATL!OperationCallExp(
+			operationName <- 'refInmediateComposite',
+			source <- s.value.source
+		)
+	do{
+		if(self.indexMoveMetaproperty < self.path('ExamElement','Evaluation')){
+			self.indexMoveMetaproperty <- self.indexMoveMetaproperty + 1;
+			t.source <- self.B2OCE_Movemetaproperty_source(s);
+		}
+	}
+}
+----------------------------------------------------------------------------------
+--            _   ___  _       _ ___        _ ___       _          _  _
+--           |_ \/ |  |_| /_\ |   |    |\/||_  |  /_\  |  |   /_\ |_ |_ 
+--           |_ /\ |  |\ /   \|_  |    |  ||_  | /   \ |_ |_ /   \ _| _|
+---------------------------------------------------------------------------------
+rule Module_Extractmetaclass {
+	from
+		s : ATL!Module(
+		if self.getRemoveModelElementLeft.size()>0 and self.getFlattenedClass.size()<=0
+		and self.filterDiffModel(self.getDiffModel)<>self.targetMM then
+			true
+		else
+			false
+		endif
+		)
+	to
+		t : ATL!Module (
+			name <- s.name,
+			libraries <- s.libraries,
+			isRefining <- s.isRefining,
+			inModels <- s.inModels,
+			outModels <- s.outModels,
+			elements <- s.elements
+		)
+		do{
+			'Extract metaclass Module'.println();
+			
+			t.elements <- t.elements->append(thisModule.MatchedRule2MatchedRule_Extractmetaclass(t.elements));
+		}
+}
+
+lazy rule MatchedRule2MatchedRule_Extractmetaclass {
+	from
+		s : ATL!MatchedRule
+	
+	to
+		mr : ATL!MatchedRule (
+			name <- thisModule.getAddedClass,
+			isAbstract <- false,
+			isRefining <- false,
+			inPattern <- ip_i_c2,
+			outPattern <- op_i_c2,
+			commentsBefore <- Set {'--NEW RULE'}
+		),
+		ip_i_c2 : ATL!InPattern (
+			elements <- Sequence{ipe_i_c2}
+		),
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- self.deletedRule_Extractmetaclass->first().inPattern.elements->first().varName,
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- thisModule.getAddedClass,
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- self.sourceMM	
+		),
+		op_i_c2 : ATL!OutPattern (
+			elements <- Sequence{ope_i_c2}	
+		),
+		ope_i_c2 : ATL!SimpleOutPatternElement(
+			varName <- 't',
+			type <- opet_i_c2,
+			bindings <- Sequence{b}
+		),
+		opet_i_c2 : ATL!OclModelElement (
+			name <- self.deletedBindingOutPattern_Extractmetaclass,--'OpenView'
+			model <- om2
+		),
+		om2 : ATL!OclModel (
+			name <- self.targetMM
+		),
+		b : ATL!Binding ( 
+			propertyName <- self.deletedBindings_Extractmetaclass->first().propertyName,
+			value <- arg,
+			commentsBefore <- Set {'--comment'}
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- self.deletedBindings_Extractmetaclass->first().value.name,
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- ipe_i_c2	
+		)
+		do{
+			'MatchedRule2MatchedRule_Extractmetaclass'.println();
+		}
+	
+}
+
+rule SimpleOutPatternElement_Extractmetaclass {
+	from
+		s : ATL!SimpleOutPatternElement(
+		if self.getRemoveModelElementLeft.size()>0 and self.getFlattenedClass.size()<=0 
+		and self.filterDiffModel(self.getDiffModel)<>self.targetMM then
+			true
+		else
+			false
+		endif
+		)
+
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			--bindings <- s.bindings
+			--Delete metaproperty if it uses a moved attribute
+			bindings <- self.delete_Extractmetaclass(s.bindings)
+		)
+	do {
+		'Extract metaclass SimpleOutPatternElement'.println();			
+				
+		}
+}
+
+----------------------------------Target-----------------------------------------
+rule MatchedRule_Extractmetaclass_target {
+	from
+		s : ATL!MatchedRule(
+		if self.getRemoveModelElementLeft.size()>0 and self.getFlattenedClass.size()<=0
+		and self.filterDiffModel(self.getDiffModel)=self.targetMM then
+			true
+		else
+			false
+		endif	
+		)
+	
+	to
+		t : ATL!MatchedRule (
+			inPattern <- s.inPattern,
+			children <- s.children,
+			superRule <- s.superRule,
+			isAbstract <- s.isAbstract,
+			isRefining <- s.isRefining,
+			isNoDefault <- s.isNoDefault,
+			"module" <- s."module",
+			location <- s.location,
+			commentsBefore <- s.commentsBefore,
+			commentsAfter <- s.commentsAfter,
+			outPattern <- s.outPattern,
+			actionBlock <- s.actionBlock,
+			variables <- s.variables,
+			name <- s.name	
+			
+		),
+		op : ATL!OutPattern (
+			"rule" <- s.outPattern."rule",
+			elements <- s.outPattern.elements
+		)
+		do{
+			'MatchedRule_Extractmetaclass_target'.println();
+			--it has to be added to the rule that has 'OpenView'
+			if (self.belongsToDeletedRule_Extractmetaclass_target(s.name)){
+				op.elements <- op.elements->append(self.SOPE2SOPE_Extractmetaclass_target(op.elements));
+			
+			}
+			
+		}
+}
+rule SimpleOutPatternElement_Extractmetaclass_target {
+	from
+		s : ATL!SimpleOutPatternElement(
+		if self.getRemoveModelElementLeft.size()>0 and self.getFlattenedClass.size()<=0
+		and self.filterDiffModel(self.getDiffModel)=self.targetMM then
+			true
+		else
+			false
+		endif
+		)
+
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			--bindings <- s.bindings
+			--Delete metaproperty if it uses a moved attribute
+			bindings <- self.delete_Extractmetaclass_target(s.bindings)
+		)
+	do {
+		'SimpleOutPatternElement_Extractmetaclass_target'.println();			
+				
+		}
+}
+lazy rule SOPE2SOPE_Extractmetaclass_target {
+	from
+		s : ATL!SimpleOutPatternElement
+	
+	to
+		ope_i_c2 : ATL!SimpleOutPatternElement(
+			varName <- self.getAddedClass.toLower(),--'newopenview'
+			type <- opet_i_c2,
+			bindings <- Sequence{self.deletedBindings_Extractmetaclass_target}
+			--bindings <- Sequence{b}			
+			
+		),
+		opet_i_c2 : ATL!OclModelElement (
+			name <- self.getAddedClass,--'NewOpenView'
+			model <- om2
+		),
+		om2 : ATL!OclModel (
+			name <- self.targetMM	
+		)
+--		b : ATL!Binding ( 
+--			propertyName <- 'propertyname',
+--			value <- arg,
+--			commentsBefore <- Set {'--comment'}
+--		),
+--		arg : ATL!StringExp (
+--			stringSymbol <- 'Style'
+--		)
+--		ve : ATL!VariableExp (
+--			referredVariable <- ipe_i_c2	
+--		)
+		do{
+--			self.variableDeclarations <- self.variableDeclarations->append(ope_i_c2);
+--			self.indexBinding <- 1;
+--			for (iterator in self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).bindings){
+--				if (self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).bindings.at(self.indexBinding).value.oclIsTypeOf(ATL!VariableExp)){
+--					'B2B'.println();
+--					ope_i_c2.bindings <- ope_i_c2.bindings->append(self.B2B_Classmerge(ope_i_c2.bindings));
+--				}else{
+--					if (self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).bindings.at(self.indexBinding).value.oclIsTypeOf(ATL!StringExp)){
+--						'B2BString'.println();
+--						ope_i_c2.bindings <- ope_i_c2.bindings->append(self.B2BString_Classmerge(ope_i_c2.bindings));
+--					}else{
+--						'B2BNavigation'.println();
+--						ope_i_c2.bindings <- ope_i_c2.bindings->append(self.B2BNavigation_Classmerge(ope_i_c2.bindings));
+--					}
+--				}
+--				self.indexBinding <- self.indexBinding + 1;
+--			}
+			'SOPE2SOPE_Extractmetaclass_target'.println();
+		}
+}
+
+
+
+
+----------------------------------------------------------------------------------
+--                           _             _ ___       _          _  _
+--           | |\ | |  ||\ ||_        |\/||_  |  /_\  |  |   /_\ |_ |_ 
+--           | | \| |_ || \||_        |  ||_  | /   \ |_ |_ /   \ _| _|
+---------------------------------------------------------------------------------
+rule Module_Inlinemetaclass {
+	from
+		s : ATL!Module(
+		if self.getMoveMetaproperty.size()>0 and
+		self.getRemoveModelElementLeft.size()<=0 and
+		self.getFlattenedClass.size()<=0 then
+			true
+		else
+			false
+		endif)
+	to
+		t : ATL!Module (
+			name <- s.name,
+			libraries <- s.libraries,
+			isRefining <- s.isRefining,
+			inModels <- s.inModels,
+			outModels <- s.outModels,
+			--elements <- s.elements
+			elements <- self.deleteRule_Inlinemetaclass(s.elements)
+		)
+		do{
+			'Inline metaclass module'.println();
+			t.elements <- t.elements->append(thisModule.MatchedRule2MatchedRule_Inlinemetaclass(t.elements));
+		}
+}
+
+lazy rule MatchedRule2MatchedRule_Inlinemetaclass {
+	from
+		s : ATL!MatchedRule
+	
+	to
+		mr : ATL!MatchedRule (
+			name <- thisModule.getAddedClass_Inlinemetaclass,
+			isAbstract <- false,
+			isRefining <- false,
+			inPattern <- ip_i_c2,
+			outPattern <- op_i_c2,
+			commentsBefore <- Set {'--NEW RULE'}
+		),
+		ip_i_c2 : ATL!InPattern (
+			elements <- Sequence{ipe_i_c2}
+		),
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- self.deletedRule_Inlinemetaclass->first().inPattern.elements->first().varName,
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- thisModule.getAddedClass_Inlinemetaclass,
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- self.sourceMM	
+		),
+		op_i_c2 : ATL!OutPattern (
+			elements <- Sequence{ope_i_c2}	
+		),
+		ope_i_c2 : ATL!SimpleOutPatternElement(
+			varName <- 't',
+			type <- opet_i_c2,
+			bindings <- Sequence{b}
+		),
+		opet_i_c2 : ATL!OclModelElement (
+			name <- self.deletedBindingOutPattern_Inlinemetaclass,--'OpenView'
+			model <- om2
+		),
+		om2 : ATL!OclModel (
+			name <- self.targetMM	
+		),
+		b : ATL!Binding ( 
+			propertyName <- self.deletedBindings_Inlinemetaclass->first().propertyName,
+			value <- arg,
+			commentsBefore <- Set {'--comment'}
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- self.deletedBindings_Inlinemetaclass->first().value.name,
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- ipe_i_c2	
+		)
+		do{
+			'MatchedRule2MatchedRule_Inlinemetaclass'.println();
+		}
+	
+}
+
+---------------------------------------------------------------------------------------------------------
+--           _  _  ___          _  _   ___ _    _  _      _  _  _  ___   _
+--  ||\ ||_||_ |_|| |  /_\ |\ ||  |_    | | |  |  | ||\/||_|| ||_ | |  || ||\ |
+--  || \|| ||_ |\ | | /   \| \||_ |_    | |_|  |_ |_||  ||  |_| _|| |  ||_|| \|
+--------------------------------------------------------------------------------------------------------
+rule Inheritance_to_composition {
+	from
+		s: ATL!MatchedRule
+		(
+		if not s.inPattern.filter.oclIsUndefined() then
+			if s.inPattern.filter.oclIsTypeOf(ATL!OperatorCallExp) then
+				if not s.inPattern.filter.source.oclIsUndefined() then
+					if s.inPattern.filter.source.oclIsTypeOf(ATL!NavigationOrAttributeCallExp) then
+						if not s.inPattern.filter.source.source.oclIsUndefined() then
+							if s.inPattern.filter.source.source.oclIsTypeOf(ATL!OperationCallExp)then
+								if s.inPattern.filter.source.source.operationName='oclIsTypeOf' then
+									if not s.inPattern.filter.source.source.arguments->first().oclIsUndefined() then
+										if s.inPattern.filter.source.source.arguments->first().name=self.getSon then
+											true
+										else
+											false
+										endif
+									else
+										false
+									endif
+								else
+									false
+								endif
+							else
+								false
+							endif
+						else
+							false
+						endif
+					else
+						false
+					endif
+				else
+					false
+				endif
+			else
+				false
+			endif
+		else
+			false
+		endif
+		)
+	to
+		t : ATL!MatchedRule(
+			inPattern <- ip_i_c2,
+			children <- s.children,
+			superRule <- s.superRule,
+			isAbstract <- s.isAbstract,
+			isRefining <- s.isRefining,
+			isNoDefault <- s.isNoDefault,
+			"module" <- s."module",
+			location <- s.location,
+			commentsBefore <- s.commentsBefore,
+			commentsAfter <- s.commentsAfter,
+			outPattern <- s.outPattern,
+			actionBlock <- s.actionBlock,
+			variables <- s.variables,
+			name <- s.name	
+		),
+		--remember to fill all the attributes!
+		ip_i_c2 : ATL!InPattern (
+			elements <- Sequence{ipe_i_c2},
+			"rule" <- s.inPattern."rule",
+			filter <- oce
+		),
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- s.inPattern.elements->first().varName,--'xml'
+			type <- ipet_i_c2,
+			variableExp <- s.inPattern.elements->first().variableExp
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- s.inPattern.elements->first().type.name,--'ExamElement'
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- self.sourceMM
+		),
+		--filter
+		oce : ATL!OperatorCallExp (
+			operationName <- s.inPattern.filter.operationName,--'='
+			source <- noace,
+			arguments <- s.inPattern.filter.arguments
+		),
+		noace : ATL!NavigationOrAttributeCallExp (
+			name <- s.inPattern.filter.source.name, --'openAttribute'
+			source <- oce2
+		),
+		oce2 : ATL!OperationCallExp (
+			operationName <- 'refInmediateComposite',
+			source <- s.inPattern.filter.source.source.source
+		)
+	do{
+		'Inheritance to composition'.println();
+		
+	}
+}
+--------------------------------------------------------------------------------------------------------
+--        _   _      _  _           _   _   _     _  _  _ ___   _  _
+--       | _ |_ |\ ||_ |_| /_\ |  |  / |_  |_ | ||_||_ |_| | | |_||_ 
+--       |_| |_ | \||_ |\ /   \|_ | /_ |_   _||_||  |_ |\  | | |  |_
+-------------------------------------------------------------------------------------------------------
+rule SimpleOutPatternElement_Generalizesupertype {
+	from
+		s : ATL!SimpleOutPatternElement(
+		if self.getRemoveReferenceValueRight.size()>0 and 
+		self.getMoveMetaproperty.size()<=0 and
+		self.getRemoveModelElementLeft.size()<=0 and
+		self.getFlattenedClass.size()<=0 then
+			true
+		else
+			false
+		endif)
+
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			--bindings <- s.bindings
+			bindings <- self.delete_Generalizesupertype(s.bindings)
+		)
+	do {
+			--self.getAttributesFromClass(self.getRemoveReferenceValueLeft).toString().println();
+			'Generalize supertype SOPE'.println();
+				
+		}
+}
+----------------------------------------------------------------------------------
+--                           _      _     _   _          _  _
+--           | |\ | |  ||\ ||_     |_ | ||_| |  |   /_\ |_ |_ 
+--           | | \| |_ || \||_      _||_||_| |_ |_ /   \ _| _|
+---------------------------------------------------------------------------------
+rule Module_Inlinesubclass {
+	from
+		s : ATL!Module(
+		if self.getAddModelElementLeft.size()>0 and
+		self.getRemoveReferenceValueRight.size()<=0 and 
+		self.getMoveMetaproperty.size()<=0 and
+		self.getRemoveModelElementLeft.size()<=0 and
+		self.getFlattenedClass.size()<=0 then
+			true
+		else
+			false
+		endif)
+	to
+		t : ATL!Module (
+			name <- s.name,
+			libraries <- s.libraries,
+			isRefining <- s.isRefining,
+			inModels <- s.inModels,
+			outModels <- s.outModels,
+			elements <- self.deleteRule_Inlinesubclass(s.elements)
+			--elements <- s.elements
+		)
+		do{
+			'Inline subclass module'.println();
+			
+		}
+}
+
+rule SimpleOutPatternElement_Inlinesubclass {
+	from
+		s : ATL!SimpleOutPatternElement(
+		if self.getAddModelElementLeft.size()>0 and
+		self.getRemoveReferenceValueRight.size()<=0 and 
+		self.getMoveMetaproperty.size()<=0 and
+		self.getRemoveModelElementLeft.size()<=0 and
+		self.getFlattenedClass.size()<=0 and
+		s.type.name = self.deletedBindingOutPattern_Inlinesubclass then
+			true
+		else
+			false
+		endif)
+		
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			bindings <- s.bindings
+			
+		)
+	do {
+			
+			'Inline subclass SOPE'.println();
+			
+			t.bindings <- t.bindings->append(thisModule.Binding2Binding_Inlinesubclass(t.bindings));
+				
+		}
+}
+
+lazy rule Binding2Binding_Inlinesubclass {
+	from
+		s : ATL!Binding
+
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.deletedBindings_Inlinesubclass->first().propertyName,
+			value <- arg,
+			commentsBefore <- Set {'--comment'}
+		),
+		--xml.optional
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- self.deletedRule_Inlinesubclass->first().inPattern.elements->first().varName,
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- 'name',
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- self.sourceMM
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- self.deletedBindings_Inlinesubclass->first().value.name,
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- ipe_i_c2	
+		)
+		do{
+			'Binding2Binding_Inlinesubclass'.println();
+		}
+		
+}
+---------------------------------------------------------------------------------------------------------
+--   _  _  _  _  _  _      _  _  ___ _         _     ___  _   _  _
+--  |_||_ |_ |_ |_||_ |\ ||  |_   | | |   ||\ |_ |\ | | ||_ ||_ |_|
+--  |\ |_ |  |_ |\ |_ | \||_ |_   | |_|   ||/ |_ | \| | ||  ||_ |\
+---------------------------------------------------------------------------------------------------
+rule SimpleOutPatternElement_Referencetoidentifier {
+	from
+		s : ATL!SimpleOutPatternElement(
+		if self.getRemoveModelElementLeft_Referencetoidentifier<>'' and
+		self.getAddModelElementLeft.size()<=0 and
+		self.getRemoveReferenceValueRight.size()<=0 and 
+		self.getMoveMetaproperty.size()<=0 and
+		self.getRemoveModelElementLeft.size()<=0 and
+		self.getFlattenedClass.size()<=0 and
+		--self.containsString(s.type.name, self.getSonsRecursive(Sequence{self.getRemoveModelElementRight_Referencetoidentifier})) 
+		self.containsString(s.type.name, self.getSonsRecursiveSource(Sequence{self.getRemoveModelElementRight_Referencetoidentifier})) 
+		then
+			true
+		else
+			false
+		endif)
+		
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			--bindings <- s.bindings
+			bindings <- self.delete_Referencetoidentifier(s.bindings)
+		)
+	do {
+--		's.type.name: '.concat(s.type.name).println();
+--		'getRemoveModelElementRight_Referencetoidentifier: '.concat(self.getRemoveModelElementRight_Referencetoidentifier).println();
+--		'getSonsRecursive: '.concat(self.getSonsRecursiveSource(Sequence{self.getRemoveModelElementRight_Referencetoidentifier})->toString()).println();
+--		self.containsString(s.type.name, self.getSonsRecursive(Sequence{self.getRemoveModelElementRight_Referencetoidentifier}))->toString().println();
+		
+		'Reference to identifier SOPE'.println();
+		
+				t.bindings <- t.bindings->append(thisModule.Binding2Binding_Referencetoidentifier(t.bindings));
+				self.idAddedBinding <- self.idAddedBinding + 1;
+		}
+}
+
+--add metaproperty
+lazy rule Binding2Binding_Referencetoidentifier {
+	from
+		s : ATL!Binding
+
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.deletedBindings_Referencetoidentifier->at(self.idAddedBinding).propertyName,
+			value <- arg,
+			commentsBefore <- Set {'--comment'}
+		),
+		
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			--varName <- self.deletedRule->first().inPattern.elements->first().varName,
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- 'name',
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- self.sourceMM	
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- self.deletedBindings_Referencetoidentifier->at(self.idAddedBinding).propertyName,--controller
+			source <- self.deletedBindings_Referencetoidentifier->at(self.idAddedBinding).value
+			
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- ipe_i_c2	
+		)
+		do{
+			'Binding2Binding_Referencetoidentifier'.println();
+		}
+		
+}
+---------------------------------------------------------------------------------------------------------
+--     _  _     ___      _  _  _  _  _  _      _  _   
+--    |_ |_||  | |      |_||_ |_ |_ |_||_ |\ ||  |_  
+--     _||  |_ | |      |\ |_ |  |_ |\ |_ | \||_ |_  
+---------------------------------------------------------------------------------------------------
+rule SimpleOutPatternElement_Splittype {
+	from
+		s : ATL!SimpleOutPatternElement(
+		if self.getRemoveModelElementLeft_Referencetoidentifier='' and
+		self.getAddModelElementLeft.size()<=0 and
+		self.getRemoveReferenceValueRight.size()<=0 and 
+		self.getMoveMetaproperty.size()<=0 and
+		self.getRemoveModelElementLeft.size()<=0 and
+		self.getFlattenedClass.size()<=0 and
+		self.getUpdateAttributeRight.size()>0 then
+		
+			true
+		else
+			false
+		endif)
+
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			--bindings <- s.bindings
+			bindings <- self.delete_Splittype(s.bindings)
+		)
+	do {
+			
+			'Split reference by type SOPE'.println();
+			--binding is added in the rule it has been deleted the other
+			--and only if the new related class is
+			self.indexSplitType <- 1;
+			for (iterator in self.getNewReferences){
+				if (self.elementIncludeBinding_Splittype(s)) {
+					if (self.isSon(self.typeOfVariable(self.getUpdateAttributeLeft->first()),
+						self.getTypeOfRelation(self.getNewReferences.at(self.indexSplitType)))){
+						t.bindings <- t.bindings->append(thisModule.B2B_Splittype(t.bindings));
+					}
+					
+				}
+				self.indexSplitType <- self.indexSplitType + 1;
+			}
+			
+				
+		}
+}
+
+lazy rule B2B_Splittype {
+	from
+		s : ATL!Binding
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.getNewReferences.at(self.indexSplitType),
+			value <- ve
+			--commentsBefore <- Set {'--comment'}
+		),
+		ve : ATL!VariableExp (
+			--Reference to the deleted (controller)
+			referredVariable <- self.deletedBindings_Splittype->first().value.referredVariable	
+		)
+		do{
+			'B2B_Splittype'.println();
+		}
+}
+--------------------------------------------------------------------------------------------------
+--  _  _  _  _  _  _ ___           _  _  _   _
+-- |_||_|| ||_||_ |_| | \ /   |\/||_ |_|| _ |_
+-- |  |\ |_||  |_ |\  |  |    |  ||_ |\ |_| |_
+---------------------------------------------------------------------------------------------------
+-----------------------Target---------------------------------------------------
+rule SimpleOutPatternElement_Propertymerge {
+	from
+		s : ATL!SimpleOutPatternElement(
+		if self.getRemoveModelElementLeft_Referencetoidentifier='' and
+		self.getAddModelElementLeft.size()<=0 and
+		self.getRemoveReferenceValueRight.size()<=0 and 
+		self.getMoveMetaproperty.size()<=0 and
+		self.getRemoveModelElementLeft.size()<=0 and
+		self.getFlattenedClass.size()<=0 and
+		self.getUpdateAttributeRight.size()<=0 and 
+		self.getUpdateAttributeRight_Propertymerge.size()>0
+		and self.filterDiffModel(self.getDiffModel)=self.targetMM then
+		
+			true
+		else
+			false
+		endif)
+
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			--bindings <- s.bindings
+			bindings <- self.delete_Propertymerge(s.bindings)
+		)
+	do {
+			
+			'Property merge SOPE'.println();
+			--Binding is added if the OutPattern is equal to the one of deleted rule
+			self.indexPropertyMerge <- 1;
+			--for (iterator in self.deletedBindingOutPatterns){
+			for (iterator in self.deletedBindingOutPatterns_Propertymerge){
+				if (s.type.name=self.deletedBindingOutPatterns_Propertymerge.at(self.indexPropertyMerge)) {
+					t.bindings <- t.bindings->append(thisModule.B2BString_Propertymerge(t.bindings));
+				}
+				self.indexPropertyMerge <- self.indexPropertyMerge + 1;
+			}
+			
+				
+		}
+}
+
+--add metaproperty
+lazy rule B2BString_Propertymerge {
+	from
+		s : ATL!Binding
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.getUpdateAttributeRight_Propertymerge->first(),
+			value <- se
+			--commentsBefore <- Set {'--comment'}
+		),
+		se : ATL!StringExp (
+			--merge of two bindings
+			stringSymbol <- self.deletedBindings_Propertymerge->first().value.stringSymbol.concat(self.deletedBindings_Propertymerge->last().value.stringSymbol)
+			
+		)
+		do{
+			'B2BString_Propertymerge'.println();
+		}
+}
+------------------------------Source---------------------------------------------
+rule NavigationOrAttributeCallExp_Propertymerge_source{
+	from
+		s : ATL!NavigationOrAttributeCallExp(
+			if self.getUpdateAttributeRight_Propertymerge.size()>0 then
+				if s.name=self.getUpdateAttributeRight_Propertymerge->first().split('\\+')->first()
+				or s.name=self.getUpdateAttributeRight_Propertymerge->first().split('\\+')->last()
+				and self.filterDiffModel(self.getDiffModel)<>self.targetMM then
+					true
+				else
+					false
+				endif
+			else
+				false
+			endif
+			
+		)
+	to
+		t : ATL!NavigationOrAttributeCallExp(
+			name <- self.getUpdateAttributeRight_Propertymerge->first(),
+			source <- s.source
+		)
+	do{
+		'NavigationOrAttributeCallExp_Propertymerge_source'.println();
+	}
+}
+
+--------------------------------------------------------------------------------------------------
+--   _         _  _        _  _  _   _
+--  |  |  /_\ |_ |_   |\/||_ |_|| _ |_
+--  |_ |_/   \ _| _|  |  ||_ |\ |_| |_
+---------------------------------------------------------------------------------------------------
+-----------------------------Source-----------------------------------------
+rule Module_Classmerge {
+	from
+		s : ATL!Module(
+		if self.getRemoveModelElementLeft_Referencetoidentifier='' and
+		self.getAddModelElementLeft.size()<=0 and
+		self.getRemoveReferenceValueRight.size()<=0 and 
+		self.getMoveMetaproperty.size()<=0 and
+		self.getRemoveModelElementLeft.size()<=0 and
+		self.getFlattenedClass.size()<=0 and
+		self.getUpdateAttributeRight.size()<=0 and 
+		self.getUpdateAttributeRight_Propertymerge.size()<=0 and
+		self.getUpdateAttributeRight_Classmerge.size()>0
+		and self.filterDiffModel(self.getDiffModel)<>self.targetMM then
+			true
+		else
+			false
+		endif)
+	to
+		t : ATL!Module (
+			name <- s.name,
+			libraries <- s.libraries,
+			isRefining <- s.isRefining,
+			inModels <- s.inModels,
+			outModels <- s.outModels,
+			--elements <- s.elements
+			elements <- self.deleteRule_Classmerge(s.elements)
+		)
+		do{
+			'Class merge module'.println();
+			t.elements <- t.elements->append(thisModule.MatchedRule2MatchedRule_Classmerge(t.elements));
+			
+		}
+}
+
+lazy rule MatchedRule2MatchedRule_Classmerge {
+	from
+		s : ATL!MatchedRule
+	
+	to
+		mr : ATL!MatchedRule (
+			name <- thisModule.getUpdateAttributeRight_Classmerge->first(),
+			isAbstract <- false,
+			isRefining <- false,
+			inPattern <- ip_i_c2,
+			outPattern <- op_i_c2,
+			commentsBefore <- Set {'--MERGED RULE'}
+		),
+		ip_i_c2 : ATL!InPattern (
+			elements <- Sequence{ipe_i_c2}
+		),
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- self.deletedRule_Classmerge->first().inPattern.elements->first().varName,
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- thisModule.getUpdateAttributeRight_Classmerge->first(),
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- self.sourceMM
+		),
+		op_i_c2 : ATL!OutPattern (
+			--union of two rules
+			elements <- self.deletedRule_Classmerge->first().outPattern.elements
+			--elements <- self.deletedRule->first().outPattern.elements.union(self.deletedRule->last().outPattern.elements)
+		)
+
+		do{
+			for (iterator in self.deletedRule_Classmerge->last().outPattern.elements){
+				op_i_c2.elements <- op_i_c2.elements->append(thisModule.SOPE2SOPE_Classmerge(op_i_c2.elements));
+				self.index <- self.index + 1;
+				
+			}
+			'MatchedRule2MatchedRule_Classmerge'.println();
+		}
+	
+}
+lazy rule SOPE2SOPE_Classmerge {
+	from
+		s : ATL!SimpleOutPatternElement
+	
+	to
+		ope_i_c2 : ATL!SimpleOutPatternElement(
+			varName <- self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).varName.concat('_2'),
+			type <- opet_i_c2
+						
+			
+		),
+		opet_i_c2 : ATL!OclModelElement (
+			name <- self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).type.name,
+			model <- om2
+		),
+		om2 : ATL!OclModel (
+			name <- self.targetMM	
+		)
+
+		do{
+			self.variableDeclarations <- self.variableDeclarations->append(ope_i_c2);
+			self.indexBinding <- 1;
+			for (iterator in self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).bindings){
+				if (self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).bindings.at(self.indexBinding).value.oclIsTypeOf(ATL!VariableExp)){
+					'B2B'.println();
+					ope_i_c2.bindings <- ope_i_c2.bindings->append(self.B2B_Classmerge(ope_i_c2.bindings));
+				}else{
+					if (self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).bindings.at(self.indexBinding).value.oclIsTypeOf(ATL!StringExp)){
+						'B2BString'.println();
+						ope_i_c2.bindings <- ope_i_c2.bindings->append(self.B2BString_Classmerge(ope_i_c2.bindings));
+					}else{
+						'B2BNavigation'.println();
+						ope_i_c2.bindings <- ope_i_c2.bindings->append(self.B2BNavigation_Classmerge(ope_i_c2.bindings));
+					}
+				}
+				self.indexBinding <- self.indexBinding + 1;
+			}
+			'SOPE2SOPE_Classmerge'.println();
+		}
+}
+--Binding when binding.value is NavigationOrAttributeCallExp
+lazy rule B2BNavigation_Classmerge {
+	from
+		s : ATL!Binding
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).bindings.at(self.indexBinding).propertyName,
+			value <- arg
+			--commentsBefore <- Set {'--comment'}
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).bindings.at(self.indexBinding).value.name,
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).bindings.at(self.indexBinding).value.source.referredVariable	
+		)
+		do{
+			'B2BNavigation_Classmerge'.println();
+		}
+}
+--Binding when binding.value is VariableExp
+lazy rule B2B_Classmerge {
+	from
+		s : ATL!Binding
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).bindings.at(self.indexBinding).propertyName,
+			value <- ve
+			--commentsBefore <- Set {'--comment'}
+		),
+		ve : ATL!VariableExp (
+			
+		)
+		do{
+			self.indexVariable <- 1;
+			for (iterator in self.variableDeclarations){
+				if (self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).bindings.at(self.indexBinding).value.referredVariable.varName.concat('_2')
+						= self.variableDeclarations.at(self.indexVariable).varName){
+					ve.referredVariable <- self.variableDeclarations.at(self.indexVariable);
+				}
+				self.indexVariable <- self.indexVariable + 1;
+			}
+			'B2B_Classmerge'.println();
+		}
+}
+--Binding when binding.value is StringExp
+lazy rule B2BString_Classmerge {
+	from
+		s : ATL!Binding
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).bindings.at(self.indexBinding).propertyName,
+			value <- se
+			--commentsBefore <- Set {'--comment'}
+		),
+		se : ATL!StringExp (
+			stringSymbol <- self.deletedRule_Classmerge->last().outPattern.elements.at(self.index).bindings.at(self.indexBinding).value.stringSymbol	
+		)
+		do{
+			'B2BString_Classmerge'.println();
+		}
+}
+
+---------------------------------Target----------------------------------------
+--CASE 1: Two different source classes are mapped to the initial classes------
+-----------------------------------------------------------------------------
+rule OclModelElement_Classmerge_target {
+	from
+		s : ATL!OclModelElement(
+		if self.getUpdateAttributeRight_Classmerge.size()>0 then
+			if s.name = self.getUpdateAttributeRight_Classmerge->first().split('_')->first()
+			or s.name = self.getUpdateAttributeRight_Classmerge->first().split('_')->last()
+			and self.filterDiffModel(self.getDiffModel)=self.targetMM then
+				true
+			else
+				false
+			endif
+		else
+			false
+		endif
+		
+		)
+	to
+		t : ATL!OclModelElement(
+			name <- self.getUpdateAttributeRight_Classmerge->first(),--'OpenView_MultipleChoiceView'
+			model <- s.model	
+		)
+	do{
+		'OclModelElement_Classmerge_target'.println();	
+	}
+}
+
+--CASE 2: In case one source element is mapped to two target classes---------
+--------------------------------------------------------------------------
+--delete OutPattern
+rule OutPattern_Classmerge_target {
+	from
+		s : ATL!OutPattern(
+		if 	self.getUpdateAttributeRight_Classmerge.size()>0
+		and self.getDiffModel=self.targetMM then
+			true
+		else
+			false
+		endif
+		)
+	to
+		t : ATL!OutPattern (
+			elements <- self.deleteEliminateMetaclass_Classmerge_target(s.elements)
+		)
+		do{
+		'OutPattern_Classmerge_target'.println();
+	}
+}
+--delete bindings
+rule SimpleOutPatternElement_Classmerge_target {
+	from
+		s : ATL!SimpleOutPatternElement(
+		if self.getUpdateAttributeRight_Classmerge.size()>0  then
+			if 	self.getDiffModel=self.targetMM 
+			and s.type.name = self.getUpdateAttributeRight_Classmerge->first().split('_')->first() then
+				true
+			else
+				false
+			endif
+		else
+			false
+		endif
+		
+		)
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			bindings <- s.bindings->union(self.deletedBindings_Classmerge_target)
+			--bindings <- self.deleteBinding_Classmerge_target(s.bindings->select(e|e.value.oclIsKindOf(ATL!VariableExp)))->union(s.bindings->select(e|not e.value.oclIsKindOf(ATL!VariableExp)))
+		)
+	do{
+		'SimpleOutPatternElement_Classmerge_target'.println();
+
+	}
+}
+--add metaproperty
+lazy rule Binding2Binding_Classmerge_target {
+	from
+		s : ATL!Binding
+
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.deletedBindings_Classmerge_target->first().propertyName,
+			value <- arg,
+			commentsBefore <- Set {'--comment'}
+		),
+		--xml.optional
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- 'xml',
+			--varName <- self.deletedRule->first().inPattern.elements->first().varName,
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- 'name',
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- self.sourceMM	
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			--name <- self.deletedBindings_Classmerge_target->first().value.name,
+			name <- 'name',
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- ipe_i_c2	
+		)
+		do{
+			'Binding2Binding_Classmerge_target'.println();
+		}
+		
+}
+
+--Binding when binding.value is StringExp
+lazy rule B2BString_Classmerge_target {
+	from
+		s : ATL!Binding
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.deletedBindings_Classmerge_target.at(self.indexClassmerge).propertyName,
+			value <- se
+			--commentsBefore <- Set {'--comment'}
+		),
+		se : ATL!StringExp (
+			stringSymbol <- self.deletedBindings_Classmerge_target.at(self.indexClassmerge).value.stringSymbol	
+		)
+		do{
+			'B2BString_Classmerge_target'.println();
+		}
+}
+---------------------------------------------------------------------------------------------------------
+--     _  _     ___      _         _  _
+--    |_ |_||  | |      |  |  /_\ |_ |_
+--     _||  |_ | |      |_ |_/   \ _| _|
+---------------------------------------------------------------------------------------------------
+rule Module_Splitclass {
+	from
+		s : ATL!Module(
+		if self.getRemoveModelElementLeft_Referencetoidentifier='' and
+		self.getAddModelElementLeft.size()<=0 and
+		self.getRemoveReferenceValueRight.size()<=0 and 
+		self.getMoveMetaproperty.size()<=0 and
+		self.getRemoveModelElementLeft.size()<=0 and
+		self.getFlattenedClass.size()<=0 and
+		self.getUpdateAttributeRight.size()<=0 and 
+		self.getUpdateAttributeRight_Propertymerge.size()<=0 and
+		self.getUpdateAttributeRight_Classmerge.size()<=0 and 
+		self.getUpdateAttributeRight_Splitclass.size()>0 then
+		
+			true
+		else
+			false
+		endif)
+	to
+		t : ATL!Module (
+			name <- s.name,
+			libraries <- s.libraries,
+			isRefining <- s.isRefining,
+			inModels <- s.inModels,
+			outModels <- s.outModels,
+			--elements <- s.elements
+			elements <- self.deleteRule_Splitclass(s.elements)
+		)
+		do{
+			t.elements <- t.elements->append(thisModule.MatchedRule2MatchedRule_Splitclass(t.elements));
+			t.elements <- t.elements->append(thisModule.MatchedRule2MatchedRule2_Splitclass(t.elements));
+			'Module_Splitclass'.println();
+		}
+}
+-----------------ADD METACLASS---------------------------------------
+lazy rule MatchedRule2MatchedRule_Splitclass {
+	from
+		s : ATL!MatchedRule
+	
+	to
+		mr : ATL!MatchedRule (
+			name <- thisModule.getSplittedClasses->first(),
+			isAbstract <- false,
+			isRefining <- false,
+			inPattern <- ip_i_c2,
+			outPattern <- op_i_c2,
+			commentsBefore <- Set {'--SPLITTED RULE 1'}
+		),
+		ip_i_c2 : ATL!InPattern (
+			elements <- Sequence{ipe_i_c2}
+		),
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- self.deletedRule_Splitclass->first().inPattern.elements->first().varName,
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- thisModule.getSplittedClasses->first().concat('_1'),
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- self.sourceMM	
+		),
+		op_i_c2 : ATL!OutPattern (
+			
+		)
+
+		do{
+			for (iterator in self.simpleOutPatternElements){
+				op_i_c2.elements <- op_i_c2.elements->append(thisModule.SOPE2SOPE_Splitclass(op_i_c2.elements));
+				self.index_Splitclass <- self.index_Splitclass + 1;
+			}
+			'MatchedRule2MatchedRule_Splitclass_1'.println();
+		}
+}
+
+lazy rule SOPE2SOPE_Splitclass {
+	from
+		s : ATL!SimpleOutPatternElement
+	
+	to
+		ope_i_c2 : ATL!SimpleOutPatternElement(
+			varName <- self.simpleOutPatternElements.at(self.index_Splitclass).varName,
+			type <- opet_i_c2
+						
+		),
+		opet_i_c2 : ATL!OclModelElement (
+			name <- self.simpleOutPatternElements.at(self.index_Splitclass).type.name,
+			model <- om2
+		),
+		om2 : ATL!OclModel (
+			name <- self.targetMM
+		),
+		b : ATL!Binding ( 
+			propertyName <- self.deletedBindings_Splitclass->first().propertyName,
+			value <- arg
+			--commentsBefore <- Set {'--comment'}
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- self.deletedBindings_Splitclass->first().value.name,
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- self.deletedBindings_Splitclass->first().value.source.referredVariable	
+		)
+		do{
+			
+			self.indexBinding_Splitclass <- 1;
+			for (iterator in self.simpleOutPatternElements.at(self.index_Splitclass).bindings){
+				if (self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.oclIsTypeOf(ATL!VariableExp)){
+					'B2B_1'.println();
+					ope_i_c2.bindings <- ope_i_c2.bindings->append(self.B2B_Splitclass(ope_i_c2.bindings));
+				}else{
+					if (self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.oclIsTypeOf(ATL!StringExp)){
+						'B2BString_1'.println();
+						ope_i_c2.bindings <- ope_i_c2.bindings->append(self.B2BString_Splitclass(ope_i_c2.bindings));
+					}else{
+						'B2BNavigation_1'.println();
+						--We must filter bindings that are not present in the splitted class
+						if (self.containsString(self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.name,
+						--if (not self.containsString(self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.name,
+							self.deletedAttributes(thisModule.getSplittedClasses->first().concat('_1')))){
+							ope_i_c2.bindings <- ope_i_c2.bindings->append(self.B2BNavigation_Splitclass(ope_i_c2.bindings));
+						}
+						
+					}
+				}
+				self.indexBinding_Splitclass <- self.indexBinding_Splitclass + 1;
+			}
+			'SOPE2SOPE_Splitclass_1'.println();
+		}
+}
+--Binding para cuando binding.value es NavigationOrAttributeCallExp
+lazy rule B2BNavigation_Splitclass {
+	from
+		s : ATL!Binding
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).propertyName,
+			value <- arg
+			--commentsBefore <- Set {'--comment'}
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.name,
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.source.referredVariable	
+		)
+		do{
+			'B2BNavigation_Splitclass_1'.println();
+			'index_Splitclass'.concat(self.index_Splitclass.toString()).println();
+			'indexBinding_Splitclass'.concat(self.indexBinding_Splitclass.toString()).println();
+		}
+}
+--Binding para cuando binding.value es VariableExp
+lazy rule B2B_Splitclass {
+	from
+		s : ATL!Binding
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).propertyName,
+			value <- ve
+			--commentsBefore <- Set {'--comment'}
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.referredVariable	
+		)
+		do{
+			'B2B_Splitclass_1'.println();
+		}
+}
+--Binding para cuando binding.value es StringExp
+lazy rule B2BString_Splitclass {
+	from
+		s : ATL!Binding
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).propertyName,
+			value <- se
+			--commentsBefore <- Set {'--comment'}
+		),
+		se : ATL!StringExp (
+			stringSymbol <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.stringSymbol	
+		)
+		do{
+			'B2BString_Splitclass_1'.println();
+		}
+}
+-----------------------SPLITTED RULE 2-----------------------------
+lazy rule MatchedRule2MatchedRule2_Splitclass {
+	from
+		s : ATL!MatchedRule
+	
+	to
+		mr : ATL!MatchedRule (
+			name <- thisModule.getSplittedClasses->first().concat('_2'),
+			isAbstract <- false,
+			isRefining <- false,
+			inPattern <- ip_i_c2,
+			outPattern <- op_i_c2,
+			commentsBefore <- Set {'--SPLITTED RULE 2'}
+		),
+		ip_i_c2 : ATL!InPattern (
+			elements <- Sequence{ipe_i_c2}
+		),
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- self.deletedRule_Splitclass->first().inPattern.elements->first().varName,
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- thisModule.getSplittedClasses->first().concat('_2'),
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- self.sourceMM	
+		),
+		op_i_c2 : ATL!OutPattern (
+		
+			
+		)
+
+	do{
+		self.index_Splitclass <- 1;
+			for (iterator in self.simpleOutPatternElements){
+				op_i_c2.elements <- op_i_c2.elements->append(thisModule.SOPE2SOPE2_Splitclass(op_i_c2.elements));
+				self.index_Splitclass <- self.index_Splitclass + 1;
+			}
+			'MatchedRule2MatchedRule2_Splitclass_2'.println();
+		}
+}
+lazy rule SOPE2SOPE2_Splitclass {
+	from
+		s : ATL!SimpleOutPatternElement
+	
+	to
+		ope_i_c2 : ATL!SimpleOutPatternElement(
+			varName <- self.simpleOutPatternElements.at(self.index_Splitclass).varName,
+			type <- opet_i_c2
+						
+		),
+		opet_i_c2 : ATL!OclModelElement (
+			name <- self.simpleOutPatternElements.at(self.index_Splitclass).type.name,
+			model <- om2
+		),
+		om2 : ATL!OclModel (
+			name <- self.targetMM	
+		),
+		b : ATL!Binding ( 
+			propertyName <- self.deletedBindings_Splitclass->first().propertyName,
+			value <- arg
+			--commentsBefore <- Set {'--comment'}
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- self.deletedBindings_Splitclass->first().value.name,
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- self.deletedBindings_Splitclass->first().value.source.referredVariable	
+		)
+		do{
+			self.indexBinding_Splitclass <- 1;
+			for (iterator in self.simpleOutPatternElements.at(self.index_Splitclass).bindings){
+				if (self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.oclIsTypeOf(ATL!VariableExp)){
+					'B2B_2'.println();
+					ope_i_c2.bindings <- ope_i_c2.bindings->append(self.B2B2_Splitclass(ope_i_c2.bindings));
+				}else{
+					if (self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.oclIsTypeOf(ATL!StringExp)){
+						'B2BString_2'.println();
+						ope_i_c2.bindings <- ope_i_c2.bindings->append(self.B2BString2_Splitclass(ope_i_c2.bindings));
+					}else{
+						'B2BNavigation_2'.println();
+						--We must filter bindings that are not present in the splitted class
+						if (self.containsString(self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.name,
+						--if (not self.containsString(self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.name,
+							self.deletedAttributes(thisModule.getSplittedClasses->first().concat('_2')))){
+							ope_i_c2.bindings <- ope_i_c2.bindings->append(self.B2BNavigation2_Splitclass(ope_i_c2.bindings));
+						}
+					}
+				}
+				self.indexBinding_Splitclass <- self.indexBinding_Splitclass + 1;
+			}
+			'SOPE2SOPE2_Splitclass_2'.println();
+		}
+}
+--Binding para cuando binding.value es NavigationOrAttributeCallExp
+lazy rule B2BNavigation2_Splitclass {
+	from
+		s : ATL!Binding
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).propertyName,
+			value <- arg
+			--commentsBefore <- Set {'--comment'}
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.name,
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.source.referredVariable	
+		)
+		do{
+			'B2BNavigation2_Splitclass'.println();
+			'index_Splitclass'.concat(self.index_Splitclass.toString()).println();
+			'indexBinding_Splitclass'.concat(self.indexBinding_Splitclass.toString()).println();
+		}
+}
+--Binding para cuando binding.value es VariableExp
+lazy rule B2B2_Splitclass {
+	from
+		s : ATL!Binding
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).propertyName,
+			value <- ve
+			--commentsBefore <- Set {'--comment'}
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.referredVariable	
+		)
+		do{
+			'B2B2_Splitclass'.println();
+		}
+}
+--Binding para cuando binding.value es StringExp
+lazy rule B2BString2_Splitclass {
+	from
+		s : ATL!Binding
+	
+	to
+		b : ATL!Binding ( 
+			propertyName <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).propertyName,
+			value <- se
+			--commentsBefore <- Set {'--comment'}
+		),
+		se : ATL!StringExp (
+			stringSymbol <- self.simpleOutPatternElements.at(self.index_Splitclass).bindings.at(self.indexBinding_Splitclass).value.stringSymbol	
+		)
+		do{
+			'B2BString2_Splitclass'.println();
+		}
+}
+
+------------------------------------------------------------------------------
+--                     _          _  _
+--    /_\ |\ |\       |  |   /_\ |_ |_
+--   /   \|/ |/       |_ |_ /   \ _| _|
+-------------------------------------------------------------------------------
+rule Module_Addclass {
+	from
+		s : ATL!Module(
+		if self.getRemoveModelElementLeft_Referencetoidentifier='' and
+		self.getAddModelElementLeft.size()<=0 and
+		self.getRemoveReferenceValueRight.size()<=0 and 
+		self.getMoveMetaproperty.size()<=0 and
+		self.getRemoveModelElementLeft.size()<=0 and
+		self.getFlattenedClass.size()<=0 and
+		self.getUpdateAttributeRight.size()<=0 and 
+		self.getUpdateAttributeRight_Propertymerge.size()<=0 and
+		self.getUpdateAttributeRight_Classmerge.size()<=0 and 
+		self.getUpdateAttributeRight_Splitclass.size()<=0 and 
+		self.getAddedMetaclasses.size()>0 then
+		
+			true
+		else
+			false
+		endif)
+
+	to
+		t : ATL!Module (
+			name <- s.name,
+			libraries <- s.libraries,
+			isRefining <- s.isRefining,
+			inModels <- s.inModels,
+			outModels <- s.outModels,
+			elements <- Sequence{s.elements}
+		)
+		
+		do {
+			'Add class module'.println();
+			for (iterator in thisModule.getAddedMetaclasses) {
+				t.elements <- t.elements->append(thisModule.MatchedRule2MatchedRule_Addclass(t.elements));
+				self.idAddMetaclass <- self.idAddMetaclass + 1;
+			}				
+		}
+		
+}
+
+lazy rule MatchedRule2MatchedRule_Addclass {
+	from
+		s : ATL!MatchedRule
+	
+	to
+		mr : ATL!MatchedRule (
+			name <- thisModule.getAddedMetaclasses->at(self.idAddMetaclass).substring(self.DiffSize,thisModule.getAddedMetaclasses->at(self.idAddMetaclass).size()),
+			isAbstract <- false,
+			isRefining <- false,
+			inPattern <- ip_i_c2,
+			outPattern <- op_i_c2,
+			commentsBefore <- Set {'--NEW RULE'}
+		),
+		ip_i_c2 : ATL!InPattern (
+			elements <- Sequence{ipe_i_c2}
+		),
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- 's',
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- thisModule.getAddedMetaclasses->at(self.idAddMetaclass).substring(self.DiffSize,thisModule.getAddedMetaclasses->at(self.idAddMetaclass).size()),
+			model <- om
+		),
+		om : ATL!OclModel (
+			--Source MM name
+			name <- 'ExamXML'	
+		),
+		op_i_c2 : ATL!OutPattern (
+			elements <- Sequence{ope_i_c2}	
+		),
+		ope_i_c2 : ATL!SimpleOutPatternElement(
+			varName <- 't',
+			type <- opet_i_c2,
+			bindings <- Sequence{b}
+		),
+		opet_i_c2 : ATL!OclModelElement (
+			--
+			name <- 'Exam',
+			model <- om2
+		),
+		om2 : ATL!OclModel (
+			--Target MM name
+			name <- 'AssistantMVC'	
+		),
+		b : ATL!Binding (
+			commentsBefore <- Set {'--write the bindings'},
+			propertyName <- '--target',
+			value <- arg
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- 'source',
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- ipe_i_c2	
+		)
+		do{
+			'MatchedRule2MatchedRule_Addclass'.println();
+		}
+	
+}
+------------------------------------------------------------------------------
+--                     ___ ___  _   _    ___ _
+--    /_\ |\ |\    /_\  |   |  |_|||_|| | | |_
+--   /   \|/ |/   /   \ |   |  |\ ||_||_| | |_
+-------------------------------------------------------------------------------
+rule SimpleOutPatternElement_Addattribute {
+	from
+		s : ATL!SimpleOutPatternElement(
+			
+		if s.type.name <> self.deletedBindingOutPattern_Inlinesubclass then
+			if self.getAddModelElementLeft_Addattribute.size()>0 then
+			if self.simpleOutPatternHasInPattern(s.varName,self.getSonsRecursiveSource(Sequence{self.getAddModelElementLeft_Addattribute->at(self.idAddMetaproperty)})) then
+				true
+			else
+				false
+			endif
+		else
+			false
+		endif
+		else
+			false
+		endif
+			
+--		if self.getAddModelElementLeft_Addattribute.size()>0 then
+--			if self.simpleOutPatternHasInPattern(s.varName,self.getSonsRecursiveSource(Sequence{self.getAddModelElementLeft_Addattribute->at(self.idAddMetaproperty)})) then
+--				true
+--			else
+--				false
+--			endif
+--		else
+--			false
+--		endif
+		
+		)
+		
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			--bindings <- Sequence{s.bindings}
+			--Delete metaproperty
+			--bindings <- self.delete_Removeattribute(s.bindings)
+			bindings <- self.delete_Removeattribute(s.bindings)->asSet().intersection(self.deleteBinding_Removeclass(s.bindings->select(e|e.value.oclIsKindOf(ATL!VariableExp)))->union(s.bindings->select(e|not e.value.oclIsKindOf(ATL!VariableExp)))->asSet())
+			--bindings <- self.deleteBinding_Removeclass(s.bindings->select(e|e.value.oclIsKindOf(ATL!VariableExp)))->union(s.bindings->select(e|not e.value.oclIsKindOf(ATL!VariableExp)))
+		)
+	do {
+			'Add attribute SOPE, delete attribute and delete class'.println();
+			
+			self.idAddMetaproperty <- 1;
+		--t.bindings <- self.delete_Removeattribute(s.bindings);
+		
+			for (iterator in thisModule.getAddedMetaproperties) {
+				--t.bindings <- t.bindings->append(thisModule.Binding2Binding_Addattribute(t.bindings));
+				self.idAddMetaproperty <- self.idAddMetaproperty + 1;
+			}				
+		}
+}
+--Heuristic: map the attribute to an attribute with the same name and type. If there is not
+--use 'target'
+lazy rule Binding2Binding_Addattribute {
+	from
+		s : ATL!Binding
+		
+	
+	to
+		b : ATL!Binding ( --original
+			propertyName <- 'target',
+			--propertyName <- thisModule.getEqualSimmilarity('question'),
+			value <- arg,
+			commentsBefore <- Set {'--write target'}
+		),
+		--xml.optional
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			--hardcoded
+			varName <- 'xml',
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			--name <- thisModule.getAddedMetaproperties->at(self.idAddMetaproperty.reduce()).substring(self.DiffSize,thisModule.getAddedMetaproperties->at(self.idAddMetaproperty.reduce()).size()),
+			name <- thisModule.getAddedMetaproperties->at(self.idAddMetaproperty.reduce()).split('!')->last(),
+			model <- om
+		),
+		om : ATL!OclModel (
+			--Source MM name
+			name <- 'ExamXML'	
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			--name <- thisModule.getAddedMetaproperties->at(self.idAddMetaproperty.reduce()).substring(self.DiffSize,thisModule.getAddedMetaproperties->at(self.idAddMetaproperty.reduce()).size()),
+			name <- thisModule.getAddedMetaproperties->at(self.idAddMetaproperty.reduce()).split('!')->last(),
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- ipe_i_c2	
+		)
+		do{
+			'Binding2Binding_Addattribute'.println();
+		}
+}
+------------------------------------------------------------------------------
+--     _  _               _    _          _  _
+--    |_||_ |\ | /_\ |\/||_   |  |   /_\ |_ |_
+--    |\ |_ | \|/   \|  ||_   |_ |_ /   \ _| _|
+-------------------------------------------------------------------------------
+rule OclModelElement_Renameclass {
+	from
+		s : ATL!OclModelElement
+		(
+			if self.getUpdateAttributesLeft->includes(s.name) then
+				true
+			else
+				false
+			endif
+		)
+	to
+		t : ATL!OclModelElement(
+			model <- s.model,	
+			name <- self.getUpdateAttributeRightInclude(s.name),
+			definitions <- s.definitions,
+			oclExpression <- s.oclExpression,
+			operation <- s.operation,
+			mapType2 <- s.mapType2,
+			attribute <- s.attribute,
+			mapType <- s.mapType,
+			collectionTypes <- s.collectionTypes,
+			tupleTypeAttribute <- s.tupleTypeAttribute,
+			variableDeclaration <- s.variableDeclaration,
+			type <- s.type,
+			ifExp3 <- s.ifExp3,
+			appliedProperty <- s.appliedProperty,
+			collection <- s.collection,
+			letExp <- s.letExp,
+			loopExp <- s.loopExp,
+			parentOperation <- s.parentOperation,
+			initializedVariable <- s.initializedVariable,
+			ifExp2 <- s.ifExp2,
+			owningOperation <- s.owningOperation,
+			ifExp1 <- s.ifExp1,
+			owningAttribute <- s.owningAttribute,
+			location <- s.location,
+			commentsBefore <- s.commentsBefore,
+			commentsAfter <- s.commentsAfter
+		)
+		do {
+			'Rename class'.println();
+			
+			self.idUpdateMetaclass <- self.idUpdateMetaclass + 1;
+						
+		}
+}
+------------------------------------------------------------------------------
+--     _  _      _      _             ___ ___  _   _    ___ _
+--    |_||_ |\/|| |\  /|_         /_\  |   |  |_|||_|| | | |_
+--    |\ |_ |  ||_| \/ |_        /   \ |   |  |\ ||_||_| | |_
+-------------------------------------------------------------------------------
+--code in add attribute
+rule InPattern {
+	from
+		s : ATL!InPattern (
+			if not s.filter.oclIsUndefined() then
+				if not s.filter.oclIsTypeOf(ATL!IfExp) then
+					if self.filtermatch(s.filter.source.name) then
+						true
+					else
+						false
+					endif
+				else
+					false
+				endif
+			else
+				false
+			endif
+				
+		)
+	to
+		t : ATL!InPattern (
+			elements <- s.elements,
+			"rule" <- s."rule"
+		)
+		do{
+			'Remove attribute filter'.println();
+		}
+		
+}
+
+rule SimpleOutPatternElement_Removeattribute {
+	from
+		s : ATL!SimpleOutPatternElement(
+		if self.getRemoveModelElements_Removeattribute.size()>0 then
+			if self.getAddModelElementLeft_Addattribute.size()>0 then
+				if not self.simpleOutPatternHasInPattern(s.varName,self.getSonsRecursiveSource(Sequence{self.getAddModelElementLeft_Addattribute->at(self.idAddMetaproperty)})) then
+--TODO: Esta condición se ha puesto porque hay conflicto pero hay que quitarla, porque pueden haber cambios
+--de tipo remove attribute y flatten class a la vez.
+					if self.getRemoveModelElementLeft.size()=0 then 
+						true
+					else
+						false
+					endif
+				else
+					false
+				endif
+			else
+				false
+			endif
+			
+		else
+			false
+		endif
+		)
+		
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			--bindings <- Sequence{s.bindings}
+			--Delete metaproperty
+			bindings <- self.delete_Removeattribute(s.bindings)
+			
+		)
+	do {
+			'Remove attribute SOPE'.println();
+					
+		}
+}
+
+--minimum deletion
+--OR
+rule OperatorCallExp {
+	from
+		s: ATL!OperatorCallExp(
+			if s.operationName = 'or' then
+				if thisModule.isUndefined(s) then
+					true
+				else
+					false
+				endif
+			else
+				false
+			endif
+				
+		)
+		
+	to
+		t : ATL!OperatorCallExp(
+			operationName <- s.operationName,
+			type <- s.type,
+			ifExp3 <- s.ifExp3,
+			appliedProperty <- s.appliedProperty,
+			collection <- s.collection,
+			letExp <- s.letExp,
+			loopExp <- s.loopExp,
+			parentOperation <- s.parentOperation,
+			initializedVariable <- s.initializedVariable,
+			ifExp2 <- s.ifExp2,
+			owningOperation <- s.owningOperation,
+			ifExp1 <- s.ifExp1,
+			owningAttribute <- s.owningAttribute,
+			location <- s.location,
+			commentsBefore <- s.commentsBefore,
+			commentsAfter <- s.commentsAfter
+		)
+		
+		
+		
+	do{
+		'Remove attribute OCE or'.println();
+	}
+}
+
+--AND: source undefined
+rule OperatorCallExp2 {
+	from
+		s: ATL!OperatorCallExp(
+			if not s.source.oclIsUndefined() then
+				if s.source.oclIsTypeOf(ATL!OperatorCallExp) then
+					if s.source.operationName = 'and' then
+						if thisModule.isUndefined(s.source.source) then
+							true
+						else
+							false
+						endif
+					else
+						false
+					endif
+				else
+					false
+				endif
+			else
+				false
+			endif
+			
+				
+		)
+		
+	to
+		t : ATL!OperatorCallExp(
+			source <- s.source.arguments->first(),
+			arguments <- s.arguments,
+			operationName <- s.operationName,
+			type <- s.type,
+			ifExp3 <- s.ifExp3,
+			appliedProperty <- s.appliedProperty,
+			collection <- s.collection,
+			letExp <- s.letExp,
+			loopExp <- s.loopExp,
+			parentOperation <- s.parentOperation,
+			initializedVariable <- s.initializedVariable,
+			ifExp2 <- s.ifExp2,
+			owningOperation <- s.owningOperation,
+			ifExp1 <- s.ifExp1,
+			owningAttribute <- s.owningAttribute,
+			location <- s.location,
+			commentsBefore <- s.commentsBefore,
+			commentsAfter <- s.commentsAfter
+		)
+		
+		
+		
+	do{
+		'Remove attribute OCE and'.println();
+	}
+}
+
+--AND: arguments undefined
+rule OperatorCallExp3 {
+	from
+		s: ATL!OperatorCallExp(
+			if not s.source.oclIsUndefined() then
+				if s.source.oclIsTypeOf(ATL!OperatorCallExp) then
+					if s.source.operationName = 'and' then
+						if thisModule.isUndefined(s.source.arguments->first()) then
+							true
+						else
+							false
+						endif
+					else
+						false
+					endif
+				else
+					false
+				endif
+			else
+				false
+			endif
+			
+			and not(
+				if not s.source.oclIsUndefined() then
+				if s.source.oclIsTypeOf(ATL!OperatorCallExp) then
+					if s.source.operationName = 'and' then
+						if thisModule.isUndefined(s.source.source) then
+							true
+						else
+							false
+						endif
+					else
+						false
+					endif
+				else
+					false
+				endif
+			else
+				false
+			endif	
+			)
+				
+		)
+		
+	to
+		t : ATL!OperatorCallExp(
+			source <- s.source.source,
+			arguments <- s.arguments,
+			operationName <- s.operationName,
+			type <- s.type,
+			ifExp3 <- s.ifExp3,
+			appliedProperty <- s.appliedProperty,
+			collection <- s.collection,
+			letExp <- s.letExp,
+			loopExp <- s.loopExp,
+			parentOperation <- s.parentOperation,
+			initializedVariable <- s.initializedVariable,
+			ifExp2 <- s.ifExp2,
+			owningOperation <- s.owningOperation,
+			ifExp1 <- s.ifExp1,
+			owningAttribute <- s.owningAttribute,
+			location <- s.location,
+			commentsBefore <- s.commentsBefore,
+			commentsAfter <- s.commentsAfter
+		)
+		
+		
+		
+	do{
+		'Remove attribute OCE and undefined'.println();
+	}
+}
+
+--If there is an add in the filter and arguments is undefined, it is uploaded
+--source to the filter
+rule MatchedRule2 {
+	from
+		s: ATL!MatchedRule
+		(
+		if not s.inPattern.filter.oclIsUndefined() then
+			if s.inPattern.filter.oclIsTypeOf(ATL!OperatorCallExp) then
+				if s.inPattern.filter.operationName = 'and' then	
+					if not s.inPattern.filter.arguments->first().oclIsUndefined() then
+						if thisModule.isUndefined(s.inPattern.filter.arguments->first()) then
+							true
+						else
+							false
+						endif
+					else
+						false
+					endif
+				else
+					false
+				endif
+			else
+				false
+			endif
+		else
+			false
+		endif
+		)
+	to
+		t : ATL!MatchedRule(
+			--delete filter and source and move up the source of the source
+			--as a filter.
+			inPattern <- ip_i_c2,
+			children <- s.children,
+			superRule <- s.superRule,
+			isAbstract <- s.isAbstract,
+			isRefining <- s.isRefining,
+			isNoDefault <- s.isNoDefault,
+			"module" <- s."module",
+			location <- s.location,
+			commentsBefore <- s.commentsBefore,
+			commentsAfter <- s.commentsAfter,
+			outPattern <- s.outPattern,
+			actionBlock <- s.actionBlock,
+			variables <- s.variables,
+			name <- s.name	
+		),
+		ip_i_c2 : ATL!InPattern (
+			elements <- s.inPattern.elements,
+			"rule" <- s.inPattern."rule",
+			filter <- s.inPattern.filter.source
+			
+		)
+		
+		
+	do{
+		'Remove attribute matchedrule'.println();
+	}
+}
+------------------------------------------------------------------------------
+--     _  _               _           ___ ___  _   _    ___ _
+--    |_||_ |\ | /_\ |\/||_       /_\  |   |  |_|||_|| | | |_
+--    |\ |_ | \|/   \|  ||_      /   \ |   |  |\ ||_||_| | |_
+-------------------------------------------------------------------------------
+rule Binding1 {
+	from
+		s : ATL!Binding
+		(
+			if thisModule.getUpdateAttributesLeft_Renameattribute->includes(s.propertyName) then
+				true
+			else
+				false
+			endif
+		)
+	to
+		t : ATL!Binding(
+			propertyName <- self.getUpdateAttributeRightInclude(s.propertyName),
+			value <- s.value,
+			outPatternElement <- s.outPatternElement
+		)
+		do {
+			--self.idUpdateMetaproperty <- self.idUpdateMetaproperty + 1;
+			'Rename attribute'.println();
+			DIFF!UpdateAttribute.allInstances()->asSequence()->select(e|e.refImmediateComposite().changeType<>#Property_merge).size()->toString().println();
+		}
+}
+
+------------------------------------------------------------------------------
+--     _  _      _      _       _           _  _  
+--    |_||_ |\/|| |\  /|_      |  |    /_\ |_ |_
+--    |\ |_ |  ||_| \/ |_      |_ |_  /   \ _| _|
+-------------------------------------------------------------------------------
+--code in add attribute
+rule OutPattern {
+	from
+		s : ATL!OutPattern(
+		if 	self.getRemoveModelElements_Removeclass.size()>0 then
+			true
+		else
+			false
+		endif
+		)
+	to
+		t : ATL!OutPattern (
+			elements <- self.deleteEliminateMetaclass(s.elements)
+		)
+		do{
+		'Remove class OP'.println();
+		
+	}
+}
+
+rule SimpleOutPatternElement_Removeclass {
+	from
+		s : ATL!SimpleOutPatternElement(
+		if self.getRemovedMetaclasses.size()>0 then
+			if self.getAddModelElementLeft_Addattribute.size()>0 then
+				if not self.simpleOutPatternHasInPattern(s.varName,self.getSonsRecursiveSource(Sequence{self.getAddModelElementLeft_Addattribute->at(self.idAddMetaproperty)})) then
+					true
+				else
+					false
+				endif
+			else
+				false
+			endif
+			
+		else
+			false
+		endif
+		)
+	to
+		t : ATL!SimpleOutPatternElement(
+			type <- s.type,
+			varName <- s.varName,
+			bindings <- self.deleteBinding_Removeclass(s.bindings->select(e|e.value.oclIsKindOf(ATL!VariableExp)))->union(s.bindings->select(e|not e.value.oclIsKindOf(ATL!VariableExp)))
+		)
+	do{
+		'Remove class SOPE'.println();
+	}
+}
+
