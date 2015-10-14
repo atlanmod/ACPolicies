@@ -4,21 +4,83 @@
     xmlns:xmi="http://www.omg.org/XMI"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:policy="urn:oasis:names:tc:xacml:1.0:policy"
-    xsi:schemaLocation="urn:oasis:names:tc:xacml:1.0:policy ../metamodels/policy.ecore">
-  <rule ruleId="LoginRule">
+    xsi:schemaLocation="urn:oasis:names:tc:xacml:1.0:policy /XACML/metamodels/policy.ecore">
+  <rule effect="Permit" ruleId="LoginRule2">
     <target>
-      <subjects/>
-      <resources/>
+      <subjects>
+        <anySubject
+            xsi:type="policy:AttributeValueType"
+            dataType="AnySubject"/>
+      </subjects>
+      <resources>
+        <anyResource
+            xsi:type="policy:AttributeValueType"
+            dataType="AnyResource"/>
+      </resources>
       <actions>
         <anyAction
             xsi:type="policy:ActionMatchType"
             matchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
           <attributeValue
-              dataType="http://www.w3.org/2001/XMLSchema#string">
-login          </attributeValue>
+              xsi:type="policy:AttributeAssignmentType"
+              dataType="http://www.w3.org/2001/XMLSchema#string"
+              attributeId="login"/>
           <actionAttributeDesignator
               attributeId="ServerAction"
               dataType="http://www.w3.org/2001/XMLSchema#string"/>
+        </anyAction>
+      </actions>
+    </target>
+  </rule>
+  <rule effect="Permit" ruleId="LoginRule">
+    <target>
+      <subjects>
+        <anySubject
+            xsi:type="policy:AttributeValueType"
+            dataType="AnySubject"/>
+      </subjects>
+      <resources>
+        <anyResource
+            xsi:type="policy:AttributeValueType"
+            dataType="AnyResource"/>
+      </resources>
+      <actions>
+        <anyAction
+            xsi:type="policy:ActionMatchType"
+            matchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+          <attributeValue
+              xsi:type="policy:AttributeAssignmentType"
+              dataType="http://www.w3.org/2001/XMLSchema#string"
+              attributeId="login"/>
+          <actionAttributeDesignator
+              attributeId="ServerAction"/>
+        </anyAction>
+      </actions>
+    </target>
+  </rule>
+  <rule effect="Deny"
+      ruleId="LoginRuleDeny">
+    <target>
+      <subjects>
+        <anySubject
+            xsi:type="policy:AttributeValueType"
+            dataType="AnySubject"/>
+      </subjects>
+      <resources>
+        <anyResource
+            xsi:type="policy:AttributeValueType"
+            dataType="AnyResource"/>
+      </resources>
+      <actions>
+        <anyAction
+            xsi:type="policy:ActionMatchType"
+            matchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+          <attributeValue
+              xsi:type="policy:AttributeAssignmentType"
+              dataType="http://www.w3.org/2001/XMLSchema#string"
+              attributeId="login"/>
+          <actionAttributeDesignator
+              attributeId="ServerAction"/>
         </anyAction>
       </actions>
     </target>

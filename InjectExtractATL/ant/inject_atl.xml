@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<project name="inject_xacml" default="run" basedir=".">
+	 
+	<target name="run">
+		
+		<atl.loadModel name="CONTEXT" metamodel="MOF" path="../../XACML/metamodels/cs-xacml-schema-context-01.xsd.ecore" />
+		<atl.loadModel name="EVALUATION" metamodel="MOF" path="../../XACML/metamodels/Evaluation.ecore" />
+		<atl.loadModel name="ATL" metamodel="MOF" path="../../XACML/metamodels/ATL.ecore" />
+		
+		<atl.loadModel name="Context" metamodel="CONTEXT" path="../../XACML/models/context_model.xmi" />
+		
+		<atl.loadModel name="ATLinstance" metamodel="ATL" path="../../XACML/transformations/Context2Evaluation.atl">
+			<injector name="ATL"/>
+		</atl.loadModel>
+		
+		<atl.saveModel model="ATLinstance" path="../../XACML/models/Context2Evaluation.xmi"/>
+				
+	</target>
+</project>

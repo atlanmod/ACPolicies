@@ -87,8 +87,7 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="apply" upperBound="-1"
-        eType="#//ApplyType" volatile="true" transient="true" derived="true" containment="true"
-        resolveProxies="false">
+        eType="#//ApplyType" volatile="true" transient="true" containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="Apply"/>
@@ -97,7 +96,7 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="function" upperBound="-1"
-        eType="#//FunctionType" volatile="true" transient="true" derived="true" containment="true"
+        eType="#//FunctionType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -107,8 +106,8 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="attributeValue" upperBound="-1"
-        eType="#//AttributeValueType" volatile="true" transient="true" derived="true"
-        containment="true" resolveProxies="false">
+        eType="#//AttributeValueType" volatile="true" transient="true" containment="true"
+        resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="AttributeValue"/>
@@ -118,7 +117,7 @@
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="subjectAttributeDesignator"
         upperBound="-1" eType="#//SubjectAttributeDesignatorType" volatile="true"
-        transient="true" derived="true" containment="true" resolveProxies="false">
+        transient="true" containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="SubjectAttributeDesignator"/>
@@ -128,7 +127,7 @@
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="resourceAttributeDesignator"
         upperBound="-1" eType="#//AttributeDesignatorType" volatile="true" transient="true"
-        derived="true" containment="true" resolveProxies="false">
+        containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="ResourceAttributeDesignator"/>
@@ -138,7 +137,7 @@
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="actionAttributeDesignator"
         upperBound="-1" eType="#//AttributeDesignatorType" volatile="true" transient="true"
-        derived="true" containment="true" resolveProxies="false">
+        containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="ActionAttributeDesignator"/>
@@ -148,7 +147,7 @@
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="environmentAttributeDesignator"
         upperBound="-1" eType="#//AttributeDesignatorType" volatile="true" transient="true"
-        derived="true" containment="true" resolveProxies="false">
+        containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="EnvironmentAttributeDesignator"/>
@@ -157,8 +156,8 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="attributeSelector" upperBound="-1"
-        eType="#//AttributeSelectorType" volatile="true" transient="true" derived="true"
-        containment="true" resolveProxies="false">
+        eType="#//AttributeSelectorType" volatile="true" transient="true" containment="true"
+        resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="AttributeSelector"/>
@@ -300,10 +299,6 @@
     </eStructuralFeatures>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="DocumentRoot">
-    <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
-      <details key="name" value=""/>
-      <details key="kind" value="mixed"/>
-    </eAnnotations>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="mixed" unique="false" upperBound="-1"
         eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFeatureMapEntry">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
@@ -327,8 +322,8 @@
         <details key="name" value="xsi:schemaLocation"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="action" upperBound="-2"
-        eType="#//ActionType" volatile="true" transient="true" derived="true" containment="true"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="action" upperBound="-1"
+        eType="#//ActionType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -337,25 +332,25 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="actionAttributeDesignator"
-        upperBound="-2" eType="#//AttributeDesignatorType" volatile="true" transient="true"
-        derived="true" containment="true" resolveProxies="false">
+        upperBound="-1" eType="#//AttributeDesignatorType" volatile="true" transient="true"
+        containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="ActionAttributeDesignator"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="actionMatch" upperBound="-2"
-        eType="#//ActionMatchType" volatile="true" transient="true" derived="true"
-        containment="true" resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="actionMatch" upperBound="-1"
+        eType="#//ActionMatchType" volatile="true" transient="true" containment="true"
+        resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="ActionMatch"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="actions" upperBound="-2"
-        eType="#//ActionsType" volatile="true" transient="true" derived="true" containment="true"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="actions" upperBound="-1"
+        eType="#//ActionsType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -363,72 +358,70 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="anyAction" upperBound="-2"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="anyAction" upperBound="-1"
         eType="ecore:EClass http://www.eclipse.org/emf/2002/Ecore#//EObject" volatile="true"
-        transient="true" derived="true" containment="true" resolveProxies="false">
+        transient="true" containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="AnyAction"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="anyResource" upperBound="-2"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="anyResource" upperBound="-1"
         eType="ecore:EClass http://www.eclipse.org/emf/2002/Ecore#//EObject" volatile="true"
-        transient="true" derived="true" containment="true" resolveProxies="false">
+        transient="true" containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="AnyResource"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="anySubject" upperBound="-2"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="anySubject" upperBound="-1"
         eType="ecore:EClass http://www.eclipse.org/emf/2002/Ecore#//EObject" volatile="true"
-        transient="true" derived="true" containment="true" resolveProxies="false">
+        transient="true" containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="AnySubject"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="apply" upperBound="-2"
-        eType="#//ApplyType" volatile="true" transient="true" derived="true" containment="true"
-        resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="apply" upperBound="-1"
+        eType="#//ApplyType" volatile="true" transient="true" containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="Apply"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeAssignment" upperBound="-2"
-        eType="#//AttributeAssignmentType" volatile="true" transient="true" derived="true"
-        containment="true" resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeAssignment" upperBound="-1"
+        eType="#//AttributeAssignmentType" volatile="true" transient="true" containment="true"
+        resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="AttributeAssignment"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeSelector" upperBound="-2"
-        eType="#//AttributeSelectorType" volatile="true" transient="true" derived="true"
-        containment="true" resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeSelector" upperBound="-1"
+        eType="#//AttributeSelectorType" volatile="true" transient="true" containment="true"
+        resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="AttributeSelector"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeValue" upperBound="-2"
-        eType="#//AttributeValueType" volatile="true" transient="true" derived="true"
-        containment="true" resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeValue" upperBound="-1"
+        eType="#//AttributeValueType" volatile="true" transient="true" containment="true"
+        resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="AttributeValue"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="condition" upperBound="-2"
-        eType="#//ApplyType" volatile="true" transient="true" derived="true" containment="true"
-        resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="condition" upperBound="-1"
+        eType="#//ApplyType" volatile="true" transient="true" containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="Condition"/>
@@ -436,7 +429,7 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="description" unique="false"
-        upperBound="-2" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//String"
+        upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//String"
         volatile="true" transient="true" derived="true">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -445,16 +438,16 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="environmentAttributeDesignator"
-        upperBound="-2" eType="#//AttributeDesignatorType" volatile="true" transient="true"
-        derived="true" containment="true" resolveProxies="false">
+        upperBound="-1" eType="#//AttributeDesignatorType" volatile="true" transient="true"
+        containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="EnvironmentAttributeDesignator"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="function" upperBound="-2"
-        eType="#//FunctionType" volatile="true" transient="true" derived="true" containment="true"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="function" upperBound="-1"
+        eType="#//FunctionType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -462,26 +455,26 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="obligation" upperBound="-2"
-        eType="#//ObligationType" volatile="true" transient="true" derived="true"
-        containment="true" resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="obligation" upperBound="-1"
+        eType="#//ObligationType" volatile="true" transient="true" containment="true"
+        resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="Obligation"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="obligations" upperBound="-2"
-        eType="#//ObligationsType" volatile="true" transient="true" derived="true"
-        containment="true" resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="obligations" upperBound="-1"
+        eType="#//ObligationsType" volatile="true" transient="true" containment="true"
+        resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="Obligations"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="policy" upperBound="-2"
-        eType="#//PolicyType" volatile="true" transient="true" derived="true" containment="true"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="policy" upperBound="-1"
+        eType="#//PolicyType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -489,8 +482,8 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="policyDefaults" upperBound="-2"
-        eType="#//DefaultsType" volatile="true" transient="true" derived="true" containment="true"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="policyDefaults" upperBound="-1"
+        eType="#//DefaultsType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -499,7 +492,7 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="policyIdReference" unique="false"
-        upperBound="-2" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI"
+        upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI"
         volatile="true" transient="true" derived="true">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -507,8 +500,8 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="policySet" upperBound="-2"
-        eType="#//PolicySetType" volatile="true" transient="true" derived="true" containment="true"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="policySet" upperBound="-1"
+        eType="#//PolicySetType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -516,8 +509,8 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="policySetDefaults" upperBound="-2"
-        eType="#//DefaultsType" volatile="true" transient="true" derived="true" containment="true"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="policySetDefaults" upperBound="-1"
+        eType="#//DefaultsType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -526,7 +519,7 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="policySetIdReference" unique="false"
-        upperBound="-2" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI"
+        upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI"
         volatile="true" transient="true" derived="true">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -534,8 +527,8 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="resource" upperBound="-2"
-        eType="#//ResourceType" volatile="true" transient="true" derived="true" containment="true"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="resource" upperBound="-1"
+        eType="#//ResourceType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -544,25 +537,25 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="resourceAttributeDesignator"
-        upperBound="-2" eType="#//AttributeDesignatorType" volatile="true" transient="true"
-        derived="true" containment="true" resolveProxies="false">
+        upperBound="-1" eType="#//AttributeDesignatorType" volatile="true" transient="true"
+        containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="ResourceAttributeDesignator"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="resourceMatch" upperBound="-2"
-        eType="#//ResourceMatchType" volatile="true" transient="true" derived="true"
-        containment="true" resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="resourceMatch" upperBound="-1"
+        eType="#//ResourceMatchType" volatile="true" transient="true" containment="true"
+        resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="ResourceMatch"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="resources" upperBound="-2"
-        eType="#//ResourcesType" volatile="true" transient="true" derived="true" containment="true"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="resources" upperBound="-1"
+        eType="#//ResourcesType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -570,16 +563,16 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="rule" upperBound="-2" eType="#//RuleType"
-        volatile="true" transient="true" derived="true" containment="true" resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="rule" upperBound="-1" eType="#//RuleType"
+        containment="true">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="Rule"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="subject" upperBound="-2"
-        eType="#//SubjectType" volatile="true" transient="true" derived="true" containment="true"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="subject" upperBound="-1"
+        eType="#//SubjectType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -588,25 +581,25 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="subjectAttributeDesignator"
-        upperBound="-2" eType="#//SubjectAttributeDesignatorType" volatile="true"
-        transient="true" derived="true" containment="true" resolveProxies="false">
+        upperBound="-1" eType="#//SubjectAttributeDesignatorType" volatile="true"
+        transient="true" containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="SubjectAttributeDesignator"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="subjectMatch" upperBound="-2"
-        eType="#//SubjectMatchType" volatile="true" transient="true" derived="true"
-        containment="true" resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="subjectMatch" upperBound="-1"
+        eType="#//SubjectMatchType" volatile="true" transient="true" containment="true"
+        resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="SubjectMatch"/>
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="subjects" upperBound="-2"
-        eType="#//SubjectsType" volatile="true" transient="true" derived="true" containment="true"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="subjects" upperBound="-1"
+        eType="#//SubjectsType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -614,8 +607,8 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="target" upperBound="-2"
-        eType="#//TargetType" volatile="true" transient="true" derived="true" containment="true"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="target" upperBound="-1"
+        eType="#//TargetType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -624,7 +617,7 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="xPathVersion" unique="false"
-        upperBound="-2" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI"
+        upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI"
         volatile="true" transient="true" derived="true">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -737,7 +730,7 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="policySet" upperBound="-1"
-        eType="#//PolicySetType" volatile="true" transient="true" derived="true" containment="true"
+        eType="#//PolicySetType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -747,7 +740,7 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="policy" upperBound="-1"
-        eType="#//PolicyType" volatile="true" transient="true" derived="true" containment="true"
+        eType="#//PolicyType" volatile="true" transient="true" containment="true"
         resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -932,10 +925,6 @@
     </eStructuralFeatures>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="RuleType">
-    <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
-      <details key="name" value="RuleType"/>
-      <details key="kind" value="elementOnly"/>
-    </eAnnotations>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="description" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//String">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>

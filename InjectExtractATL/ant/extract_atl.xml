@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<project name="extract_xacml" default="run" basedir=".">
+	
+	<target name="run">
+		<atl.loadModel name="ATL" metamodel="MOF" path="../../XACML/metamodels/ATL.ecore" />
+		<atl.loadModel name="ATLinstance" metamodel="ATL" path="../../XACML/models/Context2Evaluation_injected.xmi"/>
+			
+		<atl.saveModel model="ATLinstance" path="../../XACML/transformations/Context2Evaluation_extracted.atl" >
+			<extractor name="ATL"/>
+		</atl.saveModel>
+	</target>
+</project>

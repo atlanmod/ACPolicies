@@ -1,0 +1,334 @@
+module XACML2ATL;
+
+create OUT: ATL from IN: XACML;
+
+rule Module {
+	from
+		s : XACML!DocumentRoot
+	to
+		t : ATL!Module (
+			name <- 'Context2Evaluation',
+			isRefining <- false,
+			inModels <- im,
+			outModels <- om,
+			elements <- s."rule"
+		),
+		im : ATL!OclModel (
+			name <- 'IN',
+			metamodel <- imm
+		),
+		om : ATL!OclModel (
+			name <- 'OUT',
+			metamodel <- omm
+		),
+		imm : ATL!OclModel (
+			name <- 'Context'
+		),
+		omm : ATL!OclModel (
+			name <- 'Evaluation'
+		)
+		do{
+			'Module'.println();
+			t.elements <- t.elements->append(thisModule.Rule2MatchedRule_DocumentRoot(t.elements));
+		}
+}
+
+--rule DocumentRoot2Output
+lazy rule Rule2MatchedRule_DocumentRoot {
+	from
+		s : XACML!RuleType
+	
+	to
+		mr : ATL!MatchedRule (
+			name <- 'DocumentRoot2Output',
+			isAbstract <- false,
+			isRefining <- false,
+			inPattern <- ip_i_c2,
+			outPattern <- op_i_c2
+		),
+		ip_i_c2 : ATL!InPattern (
+			elements <- Sequence{ipe_i_c2}
+		),
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- 's',
+			type <- ipet_i_c2
+		),
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- 'DocumentRoot',
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- 'Context'	
+		),
+		op_i_c2 : ATL!OutPattern (
+			elements <- Sequence{ope_i_c2}
+		),
+		ope_i_c2 : ATL!SimpleOutPatternElement(
+			varName <- 't',
+			type <- opet_i_c2,
+			bindings <- Sequence{b}
+						
+		),
+		opet_i_c2 : ATL!OclModelElement (
+			name <- 'Output',
+			model <- om2
+		),
+		om2 : ATL!OclModel (
+			name <- 'Evaluation'
+		),
+		b : ATL!Binding ( 
+			propertyName <- 'evaluations',
+			value <- arg
+		),
+		arg : ATL!NavigationOrAttributeCallExp (
+			name <- 'request',
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- ipe_i_c2	
+		)
+
+		do{
+			'Rule2MatchedRule_DocumentRoot'.println();
+			
+		}
+}
+
+
+
+rule Rule2MatchedRule {
+	from
+		s : XACML!RuleType
+	
+	to
+		mr : ATL!MatchedRule (
+			name <- s.ruleId,
+			isNoDefault <- true,
+			isAbstract <- false,
+			isRefining <- false,
+			inPattern <- ip_i_c2,
+			outPattern <- op_i_c2,
+			actionBlock <- ab
+		),
+		ip_i_c2 : ATL!InPattern (
+			elements <- Sequence{ipe_i_c2},
+			filter <- oce1_1
+		),
+		ipe_i_c2 : ATL!SimpleInPatternElement (
+			varName <- 's',
+			type <- ipet_i_c2
+		),
+		--filter
+		--names: column_line
+		oce1_1 : ATL!OperatorCallExp (
+			operationName <- 'and',
+			source <- oce1_2,
+			arguments <- Sequence{oce1_3} 
+		),
+		oce1_2 : ATL!OperatorCallExp (
+			operationName <- 'and',
+			source <- oce2_1, 
+			arguments <- Sequence{oce2_2}
+		),
+			oce2_1 : ATL!OperatorCallExp (
+				operationName <- '=',
+				source <- noace3_1,
+				arguments <- Sequence{se3_2} 
+			),
+				noace3_1 : ATL!NavigationOrAttributeCallExp (
+					name <- 'attributeId',
+					source <- coce4_1
+				),
+					coce4_1 : ATL!CollectionOperationCallExp(
+						operationName <- 'first',
+						source <- noace5_1
+					),
+						noace5_1 : ATL!NavigationOrAttributeCallExp (
+							name <- 'attribute',
+							source <- coce6_1
+						),
+							coce6_1 : ATL!CollectionOperationCallExp(
+								operationName <- 'first',
+								source <- noace7_1
+							),
+								noace7_1 : ATL!NavigationOrAttributeCallExp (
+									name <- 'subject',
+									source <- ve8_1
+								),
+									ve8_1 : ATL!VariableExp (
+										referredVariable <- ipe_i_c2
+									),
+				se3_2 : ATL!StringExp (
+					--stringSymbol <- 'AnySubject'
+					stringSymbol <- s.target.subjects.anySubject.dataType
+				),
+			oce2_2 : ATL!OperatorCallExp (
+				operationName <- '=',
+				source <- noace3_3,
+				arguments <- Sequence{se3_4} 
+			),
+				noace3_3 : ATL!NavigationOrAttributeCallExp (
+					name <- 'attributeId',
+					source <- coce4_2
+				),
+					coce4_2 : ATL!CollectionOperationCallExp(
+							operationName <- 'first',
+							source <- noace5_2
+						),
+							noace5_2 : ATL!NavigationOrAttributeCallExp (
+								name <- 'attribute',
+								source <- noace6_2
+							),
+								noace6_2 : ATL!NavigationOrAttributeCallExp (
+									name <- 'resource',
+									source <- ve7_2
+								),
+									ve7_2 : ATL!VariableExp (
+										referredVariable <- ipe_i_c2	
+									),	
+				se3_4 : ATL!StringExp (
+					--stringSymbol <- 'AnyResource'
+					stringSymbol <- s.target.resources.anyResource.dataType
+				),
+		oce1_3 : ATL!OperatorCallExp (
+			operationName <- '=',
+			source <- noace2_3, 
+			arguments <- Sequence{se2_4} 
+		),
+			noace2_3 : ATL!NavigationOrAttributeCallExp (
+				name <- 'attributeId',
+				source <- coce3_5
+			),
+				coce3_5 : ATL!CollectionOperationCallExp(
+					operationName <- 'first',
+					source <- noace4_3
+				),
+					noace4_3 : ATL!NavigationOrAttributeCallExp (
+						name <- 'attribute',
+						source <- noace5_3
+					),
+						noace5_3 : ATL!NavigationOrAttributeCallExp (
+							name <- 'action',
+							source <- ve6_3
+						),
+							ve6_3 : ATL!VariableExp (
+								referredVariable <- ipe_i_c2	
+							),	
+			se2_4 : ATL!StringExp (
+				--stringSymbol <- 'login'
+				stringSymbol <- s.target.actions.anyAction.attributeValue.attributeId
+			),
+		--end filter
+		
+		ipet_i_c2 : ATL!OclModelElement (
+			name <- 'RequestType',
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- 'Context'	
+		),
+		op_i_c2 : ATL!OutPattern (
+			elements <- Sequence{ope_i_c2}
+		),
+		ope_i_c2 : ATL!SimpleOutPatternElement(
+			varName <- 't',
+			type <- opet_i_c2,
+			bindings <- Sequence{b}
+						
+		),
+		opet_i_c2 : ATL!OclModelElement (
+			name <- 'Evaluation',
+			model <- om2
+		),
+		om2 : ATL!OclModel (
+			name <- 'Evaluation'
+		),
+		b : ATL!Binding ( 
+			propertyName <- 'effect',
+			value <- se
+		),
+		se : ATL!StringExp(
+			--stringSymbol <- '0'
+			stringSymbol <- s.effect.toString()
+		),
+		
+		--ActionBlock (do)
+		ab : ATL!ActionBlock(
+			statements <- Sequence{bs}
+		),
+			bs : ATL!BindingStat(
+				commentsBefore <- '--insert the Evaluation in the Output',
+				source <- noace3_6,
+				value <- coce3_7
+			),
+				noace3_6 : ATL!NavigationOrAttributeCallExp (
+					name <- 'evaluations',
+					source <- operationce4_4
+				),
+					operationce4_4 : ATL!OperationCallExp (
+						operationName <- 'resolveTemp',
+						source <- ve5_4, 
+						arguments <- Sequence{operationce5_5, se5_6}
+					),
+						ve5_4 : ATL!VariableExp (
+							referredVariable <- vd6_31
+						),
+							vd6_31 : ATL!VariableDeclaration(
+								varName <- 'thisModule',
+								variableExp <- ve5_4
+							),
+						operationce5_5 : ATL!OperationCallExp (
+							operationName <- 'refImmediateComposite',
+							source <- ve6_4
+						),
+							ve6_4 : ATL!VariableExp (
+								referredVariable <- ipe_i_c2	
+							),
+						se5_6 : ATL!StringExp (
+							stringSymbol <- 't'
+						),
+				coce3_7 : ATL!CollectionOperationCallExp(
+					operationName <- 'union',
+					source <- noace4_5,
+					arguments <- Sequence{seqe}
+				),
+					noace4_5 : ATL!NavigationOrAttributeCallExp (
+						name <- 'evaluations',
+						source <- operationce5_6
+					),
+						operationce5_6 : ATL!OperationCallExp (
+							operationName <- 'resolveTemp',
+							source <- ve6_5,
+							arguments <- Sequence{operationce6_6, se6_7} 
+						),
+							ve6_5 : ATL!VariableExp (
+								referredVariable <- vd7_21
+							),
+								vd7_21 : ATL!VariableDeclaration(
+									varName <- 'thisModule',
+									variableExp <- ve6_5
+								),
+							operationce6_6 : ATL!OperationCallExp (
+								operationName <- 'refImmediateComposite',
+								source <- ve7_3
+							),
+								ve7_3 : ATL!VariableExp (
+									referredVariable <- ipe_i_c2	
+								),
+							se6_7 : ATL!StringExp (
+								stringSymbol <- 't'
+							),
+					seqe : ATL!SequenceExp(
+						elements <- Sequence{ve5_7}
+					),
+						ve5_7 : ATL!VariableExp (
+							referredVariable <- ope_i_c2	
+						)	
+		--end ActionBlock (do)
+		do{
+--			for (iterator in self.simpleOutPatternElements){
+--				op_i_c2.elements <- op_i_c2.elements->append(thisModule.SOPE2SOPE(op_i_c2.elements));
+--			}
+			'Rule2MatchedRule'.println();
+		}
+}

@@ -1,0 +1,59 @@
+module Context2Evaluation;
+create OUT : Evaluation from IN : Context;
+
+nodefault rule LoginRule2 {
+ from
+  s : Context!RequestType
+  (
+   s.subject->first().attribute->first().attributeId = 'AnySubject' and s.resource.attribute->first().attributeId = 'AnyResource' and s.action.attribute->first().attributeId = 'login'
+  )
+ to
+  t : Evaluation!Evaluation (
+   effect <- 'Permit'
+  )
+ do {
+  --insert the Evaluation in the Output
+  thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations <- thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations->union(Sequence {t});
+ }
+}
+
+nodefault rule LoginRule {
+ from
+  s : Context!RequestType
+  (
+   s.subject->first().attribute->first().attributeId = 'AnySubject' and s.resource.attribute->first().attributeId = 'AnyResource' and s.action.attribute->first().attributeId = 'login'
+  )
+ to
+  t : Evaluation!Evaluation (
+   effect <- 'Permit'
+  )
+ do {
+  --insert the Evaluation in the Output
+  thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations <- thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations->union(Sequence {t});
+ }
+}
+
+nodefault rule LoginRuleDeny {
+ from
+  s : Context!RequestType
+  (
+   s.subject->first().attribute->first().attributeId = 'AnySubject' and s.resource.attribute->first().attributeId = 'AnyResource' and s.action.attribute->first().attributeId = 'login'
+  )
+ to
+  t : Evaluation!Evaluation (
+   effect <- 'Deny'
+  )
+ do {
+  --insert the Evaluation in the Output
+  thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations <- thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations->union(Sequence {t});
+ }
+}
+
+rule DocumentRoot2Output {
+ from
+  s : Context!DocumentRoot
+ to
+  t : Evaluation!Output (
+   evaluations <- s.request
+  )
+}
