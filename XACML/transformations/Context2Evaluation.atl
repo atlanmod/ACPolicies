@@ -2,6 +2,12 @@ module Context2Evaluation;
 
 create OUT: Evaluation from IN: Context;
 
+helper context Context!RequestType def : requestFilter (subject : String, resource : String, attribute : String) : Boolean =
+	self.subject->first().attribute->first().attributeId = subject and
+	self.resource.attribute->first().attributeId = resource and
+	self.action.attribute->first().attributeId = attribute
+;
+
 rule DocumentRoot2Output {
 	from 
 		s : Context!DocumentRoot
@@ -10,17 +16,16 @@ rule DocumentRoot2Output {
 			evaluations <- s.request
 		)
 }
-
-nodefault rule loginRulePermit {
+nodefault rule loginRulePermit_1 {
 	from 
 		s : Context!RequestType(
-			s.subject->first().attribute->first().attributeId = 'AnySubject' and
-			s.resource.attribute->first().attributeId = 'AnyResource' and
-			s.action.attribute->first().attributeId = 'login'
+			s.requestFilter('AnySubject', 'AnyResource', 'login')
 		)
 	to 
 		t : Evaluation!Evaluation (
-			effect <- '0'
+			effect <- '0',
+			rulePolicy <- 'loginRulePermit_1',
+			request <- s.id
 		)
 	do{
 		--insert the Evaluation in the Output
@@ -29,16 +34,16 @@ nodefault rule loginRulePermit {
 				-> union(Sequence{t});
 	}
 }
-nodefault rule loginRulePermit2 {
+nodefault rule loginRuleDeny_2 {
 	from 
 		s : Context!RequestType(
-			s.subject->first().attribute->first().attributeId = 'AnySubject' and
-			s.resource.attribute->first().attributeId = 'AnyResource' and
-			s.action.attribute->first().attributeId = 'login'
+			s.requestFilter('AnySubject', 'AnyResource', 'login')
 		)
 	to 
 		t : Evaluation!Evaluation (
-			effect <- '0'
+			effect <- '1',
+			rulePolicy <- 'loginRulePermit_2',
+			request <- s.id
 		)
 	do{
 		--insert the Evaluation in the Output
@@ -48,15 +53,22 @@ nodefault rule loginRulePermit2 {
 	}
 	
 }
-rule loginRuleDeny {
+nodefault rule loginRuleDeny_3 {
 	from 
 		s : Context!RequestType(
-			not (s.subject->first().attribute->first().attributeId = 'AnySubject' and
-			s.resource.attribute->first().attributeId = 'AnyResource' and
-			s.action.attribute->first().attributeId = 'login')
+			s.requestFilter('subject2', 'resource2', 'action2')
+
 		)
 	to 
 		t : Evaluation!Evaluation (
-			effect <- '1'
+			effect <- '1',
+			rulePolicy <- 'loginRuleDeny_3',
+			request <- s.id
 		)
+	do{
+		--insert the Evaluation in the Output
+		thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations
+			<- thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations 
+				-> union(Sequence{t});
+	}
 }

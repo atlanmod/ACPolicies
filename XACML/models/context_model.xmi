@@ -5,7 +5,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:context="urn:oasis:names:tc:xacml:1.0:context"
     xsi:schemaLocation="urn:oasis:names:tc:xacml:1.0:context ../metamodels/context.ecore">
-  <request>
+  <request id="1">
     <subject
         subjectCategory="urn:oasis:names:tc:xacml:1.0:subject-category:access-subject">
       <attribute
@@ -20,7 +20,7 @@
           attributeId="login"/>
     </action>
   </request>
-  <request>
+  <request id="2">
     <subject>
       <attribute
           attributeId="subject2"/>

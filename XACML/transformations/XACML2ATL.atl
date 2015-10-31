@@ -29,10 +29,177 @@ rule Module {
 		)
 		do{
 			'Module'.println();
-			t.elements <- t.elements->append(thisModule.Rule2MatchedRule_DocumentRoot(t.elements));
+			t.elements <- t.elements->append(thisModule.Rule2MatchedRule_DocumentRoot(t.elements))
+									->append(thisModule.Rule2Helper(t.elements));
 		}
 }
-
+lazy rule Rule2Helper {
+	from
+		s : XACML!RuleType
+	
+	to
+		t : ATL!Helper (
+			definition <- oclFD
+		),
+		oclFD : ATL!OclFeatureDefinition(
+			feature <- ope2_1,
+			context_ <- oclCD2_1
+		),
+			ope2_1 : ATL!Operation(
+				name <- 'requestFilter',
+				parameters <- Sequence{pa3_1, pa3_2, pa3_3},
+				returnType <- bo3_4,
+				body <- oce3_5
+			),
+				pa3_1 : ATL!Parameter(
+					varName <- 'subject',
+					variableExp <- ve4_1,
+					type <-st4_2
+				),
+					ve4_1 : ATL!VariableExp (
+						referredVariable <- pa3_1
+					),
+					st4_2 : ATL!StringType(),
+				pa3_2 : ATL!Parameter(
+					varName <- 'resource',
+					variableExp <- ve4_3,
+					type <-st4_4
+				),
+					ve4_3 : ATL!VariableExp (
+						referredVariable <- pa3_2
+					),
+					st4_4 : ATL!StringType(),
+				pa3_3 : ATL!Parameter(
+					varName <- 'attribute',
+					variableExp <- ve4_5,
+					type <-st4_6
+				),
+					ve4_5 : ATL!VariableExp (
+						referredVariable <- pa3_3
+					),
+					st4_6 : ATL!StringType(),
+				bo3_4 : ATL!BooleanType(),
+				oce3_5 : ATL!OperatorCallExp (
+					operationName <- 'and',
+					source <- oce4_7,
+					arguments <- Sequence{oce4_8} 
+				),
+					oce4_7 : ATL!OperatorCallExp (
+						operationName <- 'and',
+						source <- oce5_1,
+						arguments <- Sequence{oce5_2}
+					),
+						oce5_1 : ATL!OperatorCallExp (
+							operationName <- '=',
+							source <- noace6_1,
+							arguments <- Sequence{ve6_2}
+						),
+							noace6_1 : ATL!NavigationOrAttributeCallExp (
+								name <- 'attributeId',
+								source <- coce7_1
+							),
+								coce7_1 : ATL!CollectionOperationCallExp(
+									operationName <- 'first',
+									source <- noace8_1
+								),
+									noace8_1 : ATL!NavigationOrAttributeCallExp (
+										name <- 'attribute',
+										source <- coce9_1
+									),
+										coce9_1 : ATL!CollectionOperationCallExp(
+											operationName <- 'first',
+											source <- noace10_1
+										),
+											noace10_1 : ATL!NavigationOrAttributeCallExp (
+												name <- 'subject',
+												source <- ve11_1
+											),
+												ve11_1 : ATL!VariableExp (
+													referredVariable <- vd12_1
+												),
+													vd12_1 : ATL!VariableDeclaration(
+														varName <- 'self',
+														variableExp <- ve11_1
+													),
+							ve6_2 : ATL!VariableExp (
+								referredVariable <- pa3_1
+							),
+						oce5_2 : ATL!OperatorCallExp (
+							operationName <- '=',
+							source <- noace6_2,
+							arguments <- Sequence{ve6_3} 
+						),
+							noace6_2 : ATL!NavigationOrAttributeCallExp (
+								name <- 'attributeId',
+								source <- coce7_2
+							),
+								coce7_2 : ATL!CollectionOperationCallExp(
+									operationName <- 'first',
+									source <- noace8_2
+								),
+									noace8_2 : ATL!NavigationOrAttributeCallExp (
+										name <- 'attribute',
+										source <- noace9_2
+									),
+										noace9_2 : ATL!NavigationOrAttributeCallExp (
+											name <- 'resource',
+											source <- ve10_2
+										),
+											ve10_2 : ATL!VariableExp (
+												referredVariable <- vd11_2
+											),
+												vd11_2 : ATL!VariableDeclaration(
+													varName <- 'self',
+													variableExp <- ve10_2
+												),
+							ve6_3 : ATL!VariableExp (
+								referredVariable <- pa3_2
+							),
+					oce4_8 : ATL!OperatorCallExp (
+						operationName <- '=',
+						source <- noace5_3,
+						arguments <- Sequence{ve5_4} 
+					),
+						noace5_3 : ATL!NavigationOrAttributeCallExp (
+							name <- 'attributeId',
+							source <- coce6_4
+						),
+							coce6_4 : ATL!CollectionOperationCallExp(
+								operationName <- 'first',
+								source <- noace7_3
+							),
+								noace7_3 : ATL!NavigationOrAttributeCallExp (
+									name <- 'attribute',
+									source <- noace8_3
+								),
+									noace8_3 : ATL!NavigationOrAttributeCallExp (
+										name <- 'action',
+										source <- ve9_3
+									),
+										ve9_3 : ATL!VariableExp (
+											referredVariable <- vd10_3
+										),
+											vd10_3 : ATL!VariableDeclaration(
+												varName <- 'self',
+												variableExp <- ve9_3
+											),
+						ve5_4 : ATL!VariableExp (
+							referredVariable <- pa3_3
+						),
+			oclCD2_1 : ATL!OclContextDefinition(
+				context_ <- oclME3_4
+			),
+				oclME3_4 : ATL!OclModelElement (
+					name <- 'RequestType',
+					model <- om3_5
+				),
+				om3_5 : ATL!OclModel (
+					name <- 'Context'	
+				)
+		do{
+			'Rule2Helper'.println();
+		}
+}
 --rule DocumentRoot2Output
 lazy rule Rule2MatchedRule_DocumentRoot {
 	from
@@ -90,11 +257,8 @@ lazy rule Rule2MatchedRule_DocumentRoot {
 
 		do{
 			'Rule2MatchedRule_DocumentRoot'.println();
-			
 		}
 }
-
-
 
 rule Rule2MatchedRule {
 	from
@@ -102,7 +266,7 @@ rule Rule2MatchedRule {
 	
 	to
 		mr : ATL!MatchedRule (
-			name <- s.ruleId,
+			name <- s.ruleId, --'loginRule1'
 			isNoDefault <- true,
 			isAbstract <- false,
 			isRefining <- false,
@@ -112,113 +276,32 @@ rule Rule2MatchedRule {
 		),
 		ip_i_c2 : ATL!InPattern (
 			elements <- Sequence{ipe_i_c2},
-			filter <- oce1_1
+			filter <- operationce
 		),
 		ipe_i_c2 : ATL!SimpleInPatternElement (
 			varName <- 's',
 			type <- ipet_i_c2
 		),
 		--filter
-		--names: column_line
-		oce1_1 : ATL!OperatorCallExp (
-			operationName <- 'and',
-			source <- oce1_2,
-			arguments <- Sequence{oce1_3} 
+		operationce : ATL!OperationCallExp (
+			operationName <- 'requestFilter',
+			source <- ve2_1, 
+			arguments <- Sequence{se2_2, se2_3, se2_4}
 		),
-		oce1_2 : ATL!OperatorCallExp (
-			operationName <- 'and',
-			source <- oce2_1, 
-			arguments <- Sequence{oce2_2}
-		),
-			oce2_1 : ATL!OperatorCallExp (
-				operationName <- '=',
-				source <- noace3_1,
-				arguments <- Sequence{se3_2} 
+			ve2_1 : ATL!VariableExp (
+				referredVariable <- ipe_i_c2
 			),
-				noace3_1 : ATL!NavigationOrAttributeCallExp (
-					name <- 'attributeId',
-					source <- coce4_1
-				),
-					coce4_1 : ATL!CollectionOperationCallExp(
-						operationName <- 'first',
-						source <- noace5_1
-					),
-						noace5_1 : ATL!NavigationOrAttributeCallExp (
-							name <- 'attribute',
-							source <- coce6_1
-						),
-							coce6_1 : ATL!CollectionOperationCallExp(
-								operationName <- 'first',
-								source <- noace7_1
-							),
-								noace7_1 : ATL!NavigationOrAttributeCallExp (
-									name <- 'subject',
-									source <- ve8_1
-								),
-									ve8_1 : ATL!VariableExp (
-										referredVariable <- ipe_i_c2
-									),
-				se3_2 : ATL!StringExp (
-					--stringSymbol <- 'AnySubject'
-					stringSymbol <- s.target.subjects.anySubject.dataType
-				),
-			oce2_2 : ATL!OperatorCallExp (
-				operationName <- '=',
-				source <- noace3_3,
-				arguments <- Sequence{se3_4} 
+			se2_2 : ATL!StringExp (
+				stringSymbol <- s.target.subjects.anySubject.dataType
 			),
-				noace3_3 : ATL!NavigationOrAttributeCallExp (
-					name <- 'attributeId',
-					source <- coce4_2
-				),
-					coce4_2 : ATL!CollectionOperationCallExp(
-							operationName <- 'first',
-							source <- noace5_2
-						),
-							noace5_2 : ATL!NavigationOrAttributeCallExp (
-								name <- 'attribute',
-								source <- noace6_2
-							),
-								noace6_2 : ATL!NavigationOrAttributeCallExp (
-									name <- 'resource',
-									source <- ve7_2
-								),
-									ve7_2 : ATL!VariableExp (
-										referredVariable <- ipe_i_c2	
-									),	
-				se3_4 : ATL!StringExp (
-					--stringSymbol <- 'AnyResource'
-					stringSymbol <- s.target.resources.anyResource.dataType
-				),
-		oce1_3 : ATL!OperatorCallExp (
-			operationName <- '=',
-			source <- noace2_3, 
-			arguments <- Sequence{se2_4} 
-		),
-			noace2_3 : ATL!NavigationOrAttributeCallExp (
-				name <- 'attributeId',
-				source <- coce3_5
+			se2_3 : ATL!StringExp (
+				stringSymbol <- s.target.resources.anyResource.dataType
 			),
-				coce3_5 : ATL!CollectionOperationCallExp(
-					operationName <- 'first',
-					source <- noace4_3
-				),
-					noace4_3 : ATL!NavigationOrAttributeCallExp (
-						name <- 'attribute',
-						source <- noace5_3
-					),
-						noace5_3 : ATL!NavigationOrAttributeCallExp (
-							name <- 'action',
-							source <- ve6_3
-						),
-							ve6_3 : ATL!VariableExp (
-								referredVariable <- ipe_i_c2	
-							),	
 			se2_4 : ATL!StringExp (
-				--stringSymbol <- 'login'
 				stringSymbol <- s.target.actions.anyAction.attributeValue.attributeId
 			),
-		--end filter
+		--names: column_line
+--end filter
 		
 		ipet_i_c2 : ATL!OclModelElement (
 			name <- 'RequestType',
@@ -233,8 +316,7 @@ rule Rule2MatchedRule {
 		ope_i_c2 : ATL!SimpleOutPatternElement(
 			varName <- 't',
 			type <- opet_i_c2,
-			bindings <- Sequence{b}
-						
+			bindings <- Sequence{b, b2, b3}		
 		),
 		opet_i_c2 : ATL!OclModelElement (
 			name <- 'Evaluation',
@@ -248,10 +330,26 @@ rule Rule2MatchedRule {
 			value <- se
 		),
 		se : ATL!StringExp(
-			--stringSymbol <- '0'
-			stringSymbol <- s.effect.toString()
+			stringSymbol <- s.effect.toString() --'0'
 		),
-		
+		b2 : ATL!Binding ( 
+			propertyName <- 'rulePolicy',
+			value <- se2
+		),
+		se2 : ATL!StringExp(
+			stringSymbol <- s.ruleId --'loginRule1'
+		),
+		b3 : ATL!Binding ( 
+			propertyName <- 'request',
+			value <- noace
+		),
+		noace : ATL!NavigationOrAttributeCallExp (
+			name <- 'id',
+			source <- ve
+		),
+		ve : ATL!VariableExp (
+			referredVariable <- ipe_i_c2
+		),	
 		--ActionBlock (do)
 		ab : ATL!ActionBlock(
 			statements <- Sequence{bs}
