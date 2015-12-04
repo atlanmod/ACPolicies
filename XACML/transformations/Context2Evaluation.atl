@@ -1,74 +1,80 @@
-module Context2Evaluation;
+-- @atlcompiler emftvm
 
-create OUT: Evaluation from IN: Context;
+-- @path Context=/XACML/models/context_model.xmi
+-- @path Evaluation=/XACML/models/evaluation_model.xmi
+module Context2Evaluation_extracted;
 
-helper context Context!RequestType def : requestFilter (subject : String, resource : String, attribute : String) : Boolean =
-	self.subject->first().attribute->first().attributeId = subject and
-	self.resource.attribute->first().attributeId = resource and
-	self.action.attribute->first().attributeId = attribute
-;
+create OUT : Evaluation from IN : Context;
 
-rule DocumentRoot2Output {
-	from 
-		s : Context!DocumentRoot
-	to 
-		t : Evaluation!Output (
-			evaluations <- s.request
-		)
-}
-nodefault rule loginRulePermit_1 {
-	from 
-		s : Context!RequestType(
-			s.requestFilter('AnySubject', 'AnyResource', 'login')
-		)
-	to 
-		t : Evaluation!Evaluation (
-			effect <- '0',
-			rulePolicy <- 'loginRulePermit_1',
-			request <- s.id
-		)
-	do{
-		--insert the Evaluation in the Output
-		thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations
-			<- thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations 
-				-> union(Sequence{t});
-	}
-}
-nodefault rule loginRuleDeny_2 {
-	from 
-		s : Context!RequestType(
-			s.requestFilter('AnySubject', 'AnyResource', 'login')
-		)
-	to 
-		t : Evaluation!Evaluation (
-			effect <- '1',
-			rulePolicy <- 'loginRulePermit_2',
-			request <- s.id
-		)
-	do{
-		--insert the Evaluation in the Output
-		thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations
-			<- thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations 
-				-> union(Sequence{t});
-	}
-	
-}
-nodefault rule loginRuleDeny_3 {
-	from 
-		s : Context!RequestType(
-			s.requestFilter('subject2', 'resource2', 'action2')
+helper context Context!RequestType def: requestFilter(subject : String, resource : String, attribute : String) : Boolean =
+	self.subject->first().attribute->first().attributeValue.value = subject and
+	self.resource.attribute->first().attributeValue.value = resource and
+	self.action.attribute->first().attributeValue.value = attribute;
 
-		)
-	to 
-		t : Evaluation!Evaluation (
-			effect <- '1',
-			rulePolicy <- 'loginRuleDeny_3',
-			request <- s.id
-		)
-	do{
-		--insert the Evaluation in the Output
-		thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations
-			<- thisModule.resolveTemp(s.refImmediateComposite(), 't').evaluations 
-				-> union(Sequence{t});
-	}
+nodefault rule LoginRule2 {
+ from
+  s : Context!RequestType
+  (
+   s.requestFilter('bs@simpsons.com', 'file://example/med/record/patient/BartSimpson', 'read')
+  )
+ to
+  t : Evaluation!Evaluation (
+   effect <- 'Permit',
+   rulePolicy <- 'LoginRule2',
+   request <- s.id
+  )
 }
+
+nodefault rule LoginRule {
+ from
+  s : Context!RequestType
+  (
+   s.requestFilter('hibbert@simpsons.com', 'file://example/med/record/patient/BartSimpson', 'read')
+  )
+ to
+  t : Evaluation!Evaluation (
+   effect <- 'Permit',
+   rulePolicy <- 'LoginRule',
+   request <- s.id
+  )
+}
+
+nodefault rule LoginRuleDeny {
+ from
+  s : Context!RequestType
+  (
+   s.requestFilter('nick@simpsons.com', 'file://example/med/record/patient/BartSimpson', 'read')
+  )
+ to
+  t : Evaluation!Evaluation (
+   effect <- 'Deny',
+   rulePolicy <- 'LoginRuleDeny',
+   request <- s.id
+  )
+}
+
+lazy rule DocumentRoot2Output {
+ from
+  s : Context!DocumentRoot
+ to
+  t : Evaluation!Output
+ do {
+  --iterate over rules to fill evaluations
+  t.evaluations <- thisModule.traces.rules->collect(e |
+   e.links->collect(i |
+    i.targetElements
+   )
+  )->flatten()->collect(j |
+   j.object
+  )->select(k |
+   k.oclIsTypeOf(Evaluation!Evaluation)
+  );
+ }
+}
+
+endpoint rule EndRule() {
+ do {
+  thisModule.DocumentRoot2Output(Context!DocumentRoot.allInstances()->first());
+ }
+}
+

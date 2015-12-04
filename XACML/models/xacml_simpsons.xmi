@@ -5,17 +5,18 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:policy="urn:oasis:names:tc:xacml:1.0:policy"
     xsi:schemaLocation="urn:oasis:names:tc:xacml:1.0:policy /XACML/metamodels/policy.ecore">
-  <rule effect="Permit" ruleId="LoginRule2">
+  <rule effect="Permit"
+      ruleId="LoginRule2">
     <target>
       <subjects>
         <anySubject
             xsi:type="policy:AttributeValueType"
-            dataType="AnySubject"/>
+            dataType="bs@simpsons.com"/>
       </subjects>
       <resources>
         <anyResource
             xsi:type="policy:AttributeValueType"
-            dataType="AnyResource"/>
+            dataType="file://example/med/record/patient/BartSimpson"/>
       </resources>
       <actions>
         <anyAction
@@ -24,7 +25,7 @@
           <attributeValue
               xsi:type="policy:AttributeAssignmentType"
               dataType="http://www.w3.org/2001/XMLSchema#string"
-              attributeId="login"/>
+              attributeId="read"/>
           <actionAttributeDesignator
               attributeId="ServerAction"
               dataType="http://www.w3.org/2001/XMLSchema#string"/>
@@ -32,17 +33,18 @@
       </actions>
     </target>
   </rule>
-  <rule effect="Permit" ruleId="LoginRule">
+  <rule effect="Permit"
+      ruleId="LoginRule">
     <target>
       <subjects>
         <anySubject
             xsi:type="policy:AttributeValueType"
-            dataType="AnySubject"/>
+            dataType="hibbert@simpsons.com"/>
       </subjects>
       <resources>
         <anyResource
             xsi:type="policy:AttributeValueType"
-            dataType="AnyResource"/>
+            dataType="file://example/med/record/patient/BartSimpson"/>
       </resources>
       <actions>
         <anyAction
@@ -51,7 +53,7 @@
           <attributeValue
               xsi:type="policy:AttributeAssignmentType"
               dataType="http://www.w3.org/2001/XMLSchema#string"
-              attributeId="login"/>
+              attributeId="read"/>
           <actionAttributeDesignator
               attributeId="ServerAction"/>
         </anyAction>
@@ -64,12 +66,12 @@
       <subjects>
         <anySubject
             xsi:type="policy:AttributeValueType"
-            dataType="AnySubject"/>
+            dataType="nick@simpsons.com"/>
       </subjects>
       <resources>
         <anyResource
             xsi:type="policy:AttributeValueType"
-            dataType="AnyResource"/>
+            dataType="file://example/med/record/patient/BartSimpson"/>
       </resources>
       <actions>
         <anyAction
@@ -78,7 +80,7 @@
           <attributeValue
               xsi:type="policy:AttributeAssignmentType"
               dataType="http://www.w3.org/2001/XMLSchema#string"
-              attributeId="login"/>
+              attributeId="read"/>
           <actionAttributeDesignator
               attributeId="ServerAction"/>
         </anyAction>
