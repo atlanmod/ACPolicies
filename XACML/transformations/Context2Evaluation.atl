@@ -2,79 +2,92 @@
 
 -- @path Context=/XACML/models/context_model.xmi
 -- @path Evaluation=/XACML/models/evaluation_model.xmi
-module Context2Evaluation_extracted;
+module Context2Evaluation;
 
-create OUT : Evaluation from IN : Context;
+create OUT: Evaluation from IN: Context;
 
-helper context Context!RequestType def: requestFilter(subject : String, resource : String, attribute : String) : Boolean =
+helper def : evaluations : Sequence(Evaluation!Evaluation) = Sequence{};
+
+helper context Context!RequestType def : requestFilter (subject : String, resource : String, attribute : String) : Boolean =
 	self.subject->first().attribute->first().attributeValue.value = subject and
 	self.resource.attribute->first().attributeValue.value = resource and
-	self.action.attribute->first().attributeValue.value = attribute;
+	self.action.attribute->first().attributeValue.value = attribute
+;
 
-nodefault rule LoginRule2 {
- from
-  s : Context!RequestType
-  (
-   s.requestFilter('bs@simpsons.com', 'file://example/med/record/patient/BartSimpson', 'read')
-  )
- to
-  t : Evaluation!Evaluation (
-   effect <- 'Permit',
-   rulePolicy <- 'LoginRule2',
-   request <- s.id
-  )
+helper context Sequence(String) def : symetricDifference (param : Sequence(String)) : Sequence(String) =
+	param->iterate(p; y : Sequence(String) = self |
+		y->excluding(p))
+;
+
+nodefault rule Rule_1 {
+	from 
+		s : Context!RequestType(
+			s.requestFilter('bs@simpsons.com', 'file://example/med/record/patient/BartSimpson', 'read')
+		)
+	to 
+		t : Evaluation!Evaluation (
+			effect <- 'Permit',
+			rulePolicy <- 'Rule_1',
+			request <- s.id
+		)
 }
-
-nodefault rule LoginRule {
- from
-  s : Context!RequestType
-  (
-   s.requestFilter('hibbert@simpsons.com', 'file://example/med/record/patient/BartSimpson', 'read')
-  )
- to
-  t : Evaluation!Evaluation (
-   effect <- 'Permit',
-   rulePolicy <- 'LoginRule',
-   request <- s.id
-  )
+nodefault rule Rule_2 {
+	from 
+		s : Context!RequestType(
+			s.requestFilter('hibbert@simpsons.com', 'file://example/med/record/patient/BartSimpson', 'read')
+		)
+	to 
+		t : Evaluation!Evaluation (
+			effect <- 'Permit',
+			rulePolicy <- 'Rule_2',
+			request <- s.id
+		)
 }
-
-nodefault rule LoginRuleDeny {
- from
-  s : Context!RequestType
-  (
-   s.requestFilter('nick@simpsons.com', 'file://example/med/record/patient/BartSimpson', 'read')
-  )
- to
-  t : Evaluation!Evaluation (
-   effect <- 'Deny',
-   rulePolicy <- 'LoginRuleDeny',
-   request <- s.id
-  )
+nodefault rule Rule_3 {
+	from 
+		s : Context!RequestType(
+			s.requestFilter('nick@simpsons.com', 'file://example/med/record/patient/BartSimpson', 'read')
+		)
+	to 
+		t : Evaluation!Evaluation (
+			effect <- 'Deny',
+			rulePolicy <- 'Rule_3',
+			request <- s.id
+		)
 }
-
+lazy rule Indeterminate {
+	from 
+		s : Context!RequestType
+	to 
+		t : Evaluation!Evaluation (
+			effect <- 'Indeterminate',
+			rulePolicy <- 'Rule_' + s.id,
+			request <- s.id
+		)
+}
 lazy rule DocumentRoot2Output {
- from
-  s : Context!DocumentRoot
- to
-  t : Evaluation!Output
- do {
-  --iterate over rules to fill evaluations
-  t.evaluations <- thisModule.traces.rules->collect(e |
-   e.links->collect(i |
-    i.targetElements
-   )
-  )->flatten()->collect(j |
-   j.object
-  )->select(k |
-   k.oclIsTypeOf(Evaluation!Evaluation)
-  );
- }
+	from 
+		s : Context!DocumentRoot
+	to 
+		t : Evaluation!Output (
+		)
+	do{
+		--iterate over rules to fill "evaluations"
+		thisModule.evaluations <- thisModule.traces.rules->collect(e|e.links->collect(i|i.targetElements))->flatten()
+		->collect(j|j.object)->select(k|k.oclIsTypeOf(Evaluation!Evaluation));
+		
+		--not matched requests = all requests - matched requests
+		for (iterator in Context!RequestType.allInstances().symetricDifference(thisModule.traces.rules->collect(e|e.links->collect(i|i.sourceElements))->flatten()
+		->collect(j|j.object)->select(k|k.oclIsTypeOf(Context!RequestType)))){
+				thisModule.evaluations <- thisModule.evaluations->append(thisModule.Indeterminate(iterator));
+		}
+	
+		t.evaluations <- thisModule.evaluations;
+	}
 }
 
 endpoint rule EndRule() {
- do {
-  thisModule.DocumentRoot2Output(Context!DocumentRoot.allInstances()->first());
- }
+	do {
+		thisModule.DocumentRoot2Output(Context!DocumentRoot.allInstances()->first());
+	}
 }
-
