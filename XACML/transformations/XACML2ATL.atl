@@ -32,11 +32,133 @@ rule Module {
 		)
 		do{
 			'Module'.debug();
-			t.elements <- t.elements->append(thisModule.Rule2MatchedRule_DocumentRoot(t.elements))
+			--s.subject->first().subjectMatch->first().matchId.debug();
+			t.elements <- t.elements->append(thisModule.Rule2MatchedRule_Indeterminate(t.elements))
+									->append(thisModule.Rule2MatchedRule_DocumentRoot(t.elements))
 									->append(thisModule.Rule2CalledRule_DocumentRoot(t.elements))
-									->append(thisModule.Rule2Helper(t.elements));
+									->append(thisModule.Rule2Helper_Evaluations(t.elements))
+									->append(thisModule.Rule2Helper_SymetricDifference(t.elements))
+									->append(thisModule.Rule2Helper(t.elements))
+									;
 		}
 }
+--helper evaluations
+lazy rule Rule2Helper_Evaluations {
+	from
+		s : XACML!RuleType
+	
+	to
+		t : ATL!Helper (
+			definition <- oclFD
+		),
+		oclFD : ATL!OclFeatureDefinition(
+			feature <- attr
+		),
+		attr : ATL!Attribute(
+			name <- 'evaluations',
+			initExpression <- se,
+			type <- st
+		),
+		se : ATL!SequenceExp(),
+		st : ATL!SequenceType(
+			elementType <- oclME
+		),
+		oclME : ATL!OclModelElement (
+			name <- 'Evaluation',
+			model <- om
+		),
+		om : ATL!OclModel (
+			name <- 'Evaluation'	
+		)
+	do{
+			'Rule2Helper_Evaluations'.debug();
+	}
+}
+--helper symetricDifference
+lazy rule Rule2Helper_SymetricDifference {
+	from
+		s : XACML!RuleType
+	
+	to
+		t : ATL!Helper (
+			definition <- oclFD
+		),
+		oclFD : ATL!OclFeatureDefinition(
+			feature <-  ope2_1,
+			context_ <- oclCD
+		),
+		oclCD : ATL!OclContextDefinition(
+			context_ <- st
+		),
+			ope2_1 : ATL!Operation(
+				name <- 'symetricDifference',
+				parameters <- Sequence{pa3_1},
+				returnType <- st3_2,
+				body <- ie3_3
+			),
+				pa3_1 : ATL!Parameter(
+					varName <- 'param',
+					variableExp <- ve4_4,
+					type <- st4_2
+				),
+					st4_2 : ATL!StringType(),
+				st3_2 : ATL!SequenceType(
+					elementType <- stringType4_3
+				),
+					stringType4_3 : ATL!StringType(),
+				ie3_3 : ATL!IterateExp(
+					source <- ve4_4,
+					body <- coce4_5,
+					iterators <- it4_6,
+					result <-  vd4_7
+				),
+					ve4_4 : ATL!VariableExp (
+						referredVariable <- pa3_1-- param
+					),
+					coce4_5 : ATL!CollectionOperationCallExp(
+						operationName <- 'excluding',
+						source <- ve5_0, -- y
+						arguments <- ve4_8
+					),
+						ve5_0 : ATL!VariableExp (
+						referredVariable <- vd4_7
+					),
+					it4_6 : ATL!Iterator(
+						varName <- 'p',
+						variableExp <- ve4_8
+					),
+					vd4_7 : ATL!VariableDeclaration(
+						varName <- 'y',
+						variableExp <- ve5_1,
+						type <- seqType5_2,
+						initExpression <- ve5_3
+					),
+						ve5_1 : ATL!VariableExp (
+							referredVariable <- it4_6 -- p
+						),
+						seqType5_2 : ATL!SequenceType(
+							elementType <- stringType6_1
+						),
+							stringType6_1 : ATL!StringType(),
+						ve5_3 : ATL!VariableExp (
+							referredVariable <- vd6_2
+						),
+							vd6_2 : ATL!VariableDeclaration(
+								varName <- 'self',
+								variableExp <- ve5_3
+							),
+					ve4_8 : ATL!VariableExp (
+						referredVariable <- it4_6 -- p
+					),
+		st : ATL!SequenceType(
+			elementType <- stringType
+		),
+		stringType : ATL!StringType()
+	do{
+			'Rule2Helper_SymetricDifference'.debug();
+	}
+}
+--helper requestFilter
 lazy rule Rule2Helper {
 	from
 		s : XACML!RuleType
@@ -216,6 +338,91 @@ lazy rule Rule2Helper {
 			'Rule2Helper'.debug();
 		}
 }
+--lazy rule Indeterminate
+lazy rule Rule2MatchedRule_Indeterminate {
+	from
+		s : XACML!RuleType
+	to
+		mr : ATL!LazyMatchedRule (
+			name <- 'Indeterminate',
+			isAbstract <- false,
+			isRefining <- false,
+			inPattern <- ip,
+			outPattern <- op,
+			isUnique <- false
+		),
+		ip : ATL!InPattern (
+			elements <- Sequence{sipe2_1}
+		),
+			sipe2_1 : ATL!SimpleInPatternElement (
+				varName <- 's',
+				type <- oclME3_1,
+				variableExp <- ve6_1
+			),
+				oclME3_1 : ATL!OclModelElement (
+					name <- 'RequestType',
+					model <- om4_1
+				),
+					om4_1 : ATL!OclModel (
+						name <- 'Context'	
+					),
+		op : ATL!OutPattern (
+			elements <- Sequence{sope2_2}
+		),
+			sope2_2 : ATL!SimpleOutPatternElement(
+				varName <- 't',
+				type <- oclME3_2,
+				bindings <- Sequence{b3_3, b3_4, b3_5}
+			),
+				oclME3_2 : ATL!OclModelElement (
+					name <- 'Evaluation',
+					model <- om4_2
+				),
+					om4_2 : ATL!OclModel (
+						name <- 'Evaluation',
+						elements <- Sequence{oclME3_2}
+					),
+				b3_3 : ATL!Binding ( 
+					propertyName <- 'effect',
+					value <- se4_3
+				),
+					se4_3 : ATL!StringExp (
+						stringSymbol <- 'Indeterminate'
+					),
+				b3_4 : ATL!Binding ( 
+					propertyName <- 'rulePolicy',
+					value <- oce4_4
+				),
+					oce4_4 : ATL!OperatorCallExp (
+						operationName <- '+',
+						source <- se5_1,
+						arguments <- Sequence{noace5_2}
+					),
+						se5_1 : ATL!StringExp (
+							stringSymbol <- 'Rule_'
+						),
+						noace5_2 : ATL!NavigationOrAttributeCallExp (
+							name <- 'id',
+							source <- ve6_1
+						),
+							ve6_1 : ATL!VariableExp (
+								referredVariable <- sipe2_1
+							),
+				b3_5 : ATL!Binding ( 
+					propertyName <- 'request',
+					value <- noace4_5
+				),
+					noace4_5 : ATL!NavigationOrAttributeCallExp (
+						name <- 'id',
+						source <- ve5_3
+					),
+						ve5_3 : ATL!VariableExp (
+							referredVariable <- sipe2_1
+						)
+		do{
+			'lazy rule Indeterminate'.debug();
+		}
+}
 --lazy rule DocumentRoot2Output
 lazy rule Rule2MatchedRule_DocumentRoot {
 	from
@@ -260,7 +467,7 @@ lazy rule Rule2MatchedRule_DocumentRoot {
 		),
 		--ActionBlock (do)
 		ab : ATL!ActionBlock(
-			statements <- Sequence{bs}
+			statements <- Sequence{bs, fs}
 		),
 		bs : ATL!BindingStat(
 				commentsBefore <- '--iterate over rules to fill evaluations',
@@ -389,7 +596,201 @@ lazy rule Rule2MatchedRule_DocumentRoot {
 						vd5_6 : ATL!VariableDeclaration(
 							varName <- 'k',
 							variableExp <- ve4_1
-						)
+						),
+		--ForStat
+		fs : ATL!ForStat(
+			commentsBefore <- '--not matched requests = all requests - matched requests',
+			iterator <- it2_3,
+			collection <- oce2_4,
+			statements <- Sequence{bs2, bs3}
+		),
+			it2_3 : ATL!Iterator (
+				varName <- 'iterator',
+				variableExp <- ve4_10
+			),
+			oce2_4 : ATL!OperationCallExp (
+				operationName <- 'symetricDifference',
+				source <- oce3_5,
+				arguments <- Sequence{ie3_6}
+			),
+				oce3_5 : ATL!OperationCallExp (
+					operationName <- 'allInstances', 
+					source <- oclME4_3
+				),
+					oclME4_3 : ATL!OclModelElement (
+						name <- 'RequestType', 
+						model <- om5_7
+					),
+						om5_7 : ATL!OclModel (
+							name <- 'Context',
+							elements <- Sequence{oclME4_3}
+						),
+				ie3_6 : ATL!IteratorExp(
+					name <- 'select',
+					source <- ie4_4,
+					body <-  oce4_5,
+					iterators <- Sequence{it4_6}
+				),
+					ie4_4 : ATL!IteratorExp(
+						name <- 'collect',
+						source <- coce5_10,
+						body <-  noace5_11,
+						iterators <- Sequence{it5_12}
+					),
+					oce4_5 : ATL!OperationCallExp (
+						operationName <- 'oclIsTypeOf', 
+						source <- ve5_8,
+						arguments <- oclME5_9
+					),
+						ve5_8 : ATL!VariableExp (
+							referredVariable <- it4_6
+						),
+						oclME5_9 : ATL!OclModelElement (
+							name <- 'RequestType', 
+							model <- om6_7
+						),
+							om6_7 : ATL!OclModel (
+								name <- 'Context',
+								elements <- Sequence{oclME5_9}
+							),
+						coce5_10 : ATL!CollectionOperationCallExp(
+							operationName <- 'flatten',
+							source <- ie6_8
+						),
+							ie6_8 : ATL!IteratorExp(
+								name <- 'collect',
+								source <- noace7_5,
+								body <-  ie7_6,
+								iterators <- Sequence{it7_7}
+							),
+								noace7_5 : ATL!NavigationOrAttributeCallExp (
+									name <- 'rules',
+									source <- noace8_2
+								),
+									noace8_2 : ATL!NavigationOrAttributeCallExp (
+										name <- 'traces',
+										source <- ve9_1
+									),
+										ve9_1 : ATL!VariableExp (
+											referredVariable <- vd10_1
+										),
+											vd10_1 : ATL!VariableDeclaration(
+												varName <- 'thisModule',
+												variableExp <- ve9_1
+											),
+								ie7_6 : ATL!IteratorExp(
+									name <- 'collect',
+									source <- noace8_3,
+									body <-  noace8_4,
+									iterators <- Sequence{it8_5}
+								),
+									noace8_3 : ATL!NavigationOrAttributeCallExp (
+										name <- 'links',
+										source <- ve9_2
+									),
+										ve9_2 : ATL!VariableExp (
+											referredVariable <- it7_7
+										),
+									noace8_4 : ATL!NavigationOrAttributeCallExp (
+										name <- 'sourceElements',
+										source <- ve9_3
+									),
+										ve9_3 : ATL!VariableExp (
+											referredVariable <- it7_7
+										),
+									it8_5 : ATL!Iterator (
+										varName <- 'i',
+										variableExp <- ve9_3
+									),
+								it7_7 : ATL!Iterator (
+									varName <- 'e',
+									variableExp <- ve9_2
+								),
+						noace5_11 : ATL!NavigationOrAttributeCallExp (
+							name <- 'object',
+							source <- ve6_9
+						),
+							ve6_9 : ATL!VariableExp (
+								referredVariable <- it5_12
+							),
+						it5_12 : ATL!Iterator (
+							varName <- 'j',
+							variableExp <- ve6_9
+						),
+					it4_6 : ATL!Iterator (
+						varName <- 'k',
+						variableExp <- ve5_8
+					),
+		--BindingStat
+		bs2 : ATL!BindingStat(
+				source <- noace2_5,
+				value <- coce2_6
+		),
+			noace2_5 : ATL!NavigationOrAttributeCallExp (
+				name <- 'evaluations',
+				source <- ve3_7
+			),
+				ve3_7 : ATL!VariableExp (
+					referredVariable <- vd4_7
+				),
+					vd4_7 : ATL!VariableDeclaration(
+						varName <- 'thisModule',
+						variableExp <- ve3_7
+					),
+			coce2_6 : ATL!CollectionOperationCallExp(
+				operationName <- 'append',
+				source <- noace3_8,
+				arguments <- Sequence{oce3_9}
+			),
+				noace3_8 : ATL!NavigationOrAttributeCallExp (
+					name <- 'evaluations',
+					source <- ve4_8
+				),
+					ve4_8 : ATL!VariableExp (
+						referredVariable <- vd5_13
+					),
+						vd5_13 : ATL!VariableDeclaration(
+							varName <- 'thisModule',
+							variableExp <- ve4_8
+						),
+				oce3_9 : ATL!OperationCallExp (
+					operationName <- 'Indeterminate', 
+					source <- ve4_9,
+					arguments <- ve4_10
+				),
+					ve4_9 : ATL!VariableExp (
+						referredVariable <- vd5_14
+					),
+						vd5_14 : ATL!VariableDeclaration(
+							varName <- 'thisModule',
+							variableExp <- ve4_9
+						),
+					ve4_10 : ATL!VariableExp (
+						referredVariable <- it2_3
+					),
+		--BindingStat
+		bs3 : ATL!BindingStat(
+			source <- noace2_7,
+			value <- noace2_8
+		),
+			noace2_7 : ATL!NavigationOrAttributeCallExp (
+				name <- 'evaluations',
+				source <- ve3_10
+			),
+				ve3_10 : ATL!VariableExp (
+					referredVariable <- ope_i_c2
+				),
+			noace2_8 : ATL!NavigationOrAttributeCallExp (
+				name <- 'evaluations',
+				source <- ve3_11
+			),
+				ve3_11 : ATL!VariableExp (
+					referredVariable <- vd4_11
+				),
+					vd4_11 : ATL!VariableDeclaration(
+						varName <- 'thisModule',
+						variableExp <- ve3_11
+					)
 		do{
 			'Rule2MatchedRule_DocumentRoot'.debug();
 		}
@@ -449,7 +850,7 @@ rule Rule2MatchedRule {
 	
 	to
 		mr : ATL!MatchedRule (
-			name <- s.ruleId.debug(), --'loginRule1'
+			name <- s.ruleId, --'loginRule1'
 			isNoDefault <- true,
 			isAbstract <- false,
 			isRefining <- false,

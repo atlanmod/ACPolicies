@@ -1,0 +1,46 @@
+-- @atlcompiler emftvm
+
+-- @path XACML=/XACML/models/evaluation_model.xmi
+-- @path ATL=/XACML/models/evaluation_model_output.xmi
+module First_match;
+
+create OUT: Evaluation from IN: Evaluation;
+
+
+helper context Evaluation!Evaluation def : isFirstEvaluation() : Boolean =
+	let allEvaluations : Sequence(Evaluation!Evaluation) =
+		Evaluation!Evaluation.allInstances()->asSequence() in
+	allEvaluations->iterate(p; y : Boolean = true |
+		if p.request.toInteger() < self.request.toInteger()
+		then
+			false
+		else
+			if y = true then
+				true
+			else
+				false
+			endif
+		endif
+);
+
+rule Output {
+	from
+		s : Evaluation!Output
+	to
+		t : Evaluation!Output (
+			evaluations <- s.evaluations
+		)
+}
+
+rule Evaluation {
+	from
+		s : Evaluation!Evaluation(
+			s.isFirstEvaluation()	
+		)
+	to
+		t : Evaluation!Evaluation (
+			effect <- s.effect,
+			rulePolicy <- s.rulePolicy,
+			request <- s.request
+		)
+}
